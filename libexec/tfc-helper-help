@@ -4,6 +4,7 @@ set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
+# shellcheck disable=SC1091
 . "${BASH_SOURCE%/*}/helpers.sh"
 
 unset arg_command
@@ -66,9 +67,9 @@ if [[ ${#case_patterns[*]} -gt 0 ]]; then
   echo "Options:"
   for case_pattern in "${case_patterns[@]+"${case_patterns[@]}"}"; do
     # extract `case` pattern expressions
-    args_patterns="$(echo "${case_pattern%%${case_pattern_tag}*}" | tr -d '"' | tr -d "'" | tr -d ' ' | sed -e 's/|/, /g')"
+    args_patterns="$(echo "${case_pattern%%"${case_pattern_tag}"*}" | tr -d '"' | tr -d "'" | tr -d ' ' | sed -e 's/|/, /g')"
     # extract help message prepared as comment
-    args_message="${case_pattern#*${case_pattern_tag}}"
+    args_message="${case_pattern#*"${case_pattern_tag}"}"
     if [[ "${#args_patterns}" -lt 22 ]]; then
       printf "  %-20s  %s\n" "${args_patterns:-}" "${args_message:-}"
     else

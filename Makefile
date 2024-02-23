@@ -24,5 +24,5 @@ install:
 	done
 
 test:
-	shellcheck $(wildcard $(CURDIR)/bin/*)
+	shellcheck $(wildcard $(CURDIR)/bin/* $(CURDIR)/libexec/*)
 	bats tests

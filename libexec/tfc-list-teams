@@ -7,6 +7,7 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "${BASH_SOURCE%/*}/helpers.sh"
 
+unset arg_names
 unset arg_organization_name
 
 httpclient_args=()
@@ -20,9 +21,20 @@ while [[ $# -gt 0 ]]; do
     tfc-helper-complete "${BASH_SOURCE##*/}"
     exit 0
     ;;
+  "--force" ) # option: refresh cache
+    :
+    ;;
   "--help" ) # option: display help message
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
+    ;;
+  "--names" | "--names="* ) # option: if specified, restricts results to a team with a matching name. If multiple comma separated values are specified, teams matching any of the names are returned.
+    if [[ "$1" == *"="* ]]; then
+      arg_names="${1#*=}"
+    else
+      arg_names="${2:-}"
+      shift 1
+    fi
     ;;
   "--organization-name" | "--organization-name="* ) # option: TODO
     if [[ "$1" == *"="* ]]; then
@@ -39,6 +51,10 @@ while [[ $# -gt 0 ]]; do
   shift 1
 done
 
+if [[ -n "${arg_names:-}" ]]; then
+  httpclient_args+=("--get" "--data" "filter[names]=${arg_names}")
+fi
+
 if [[ -z "${arg_organization_name:-}" ]]; then
   arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
 fi
@@ -48,5 +64,5 @@ if [[ -z "${arg_organization_name:-}" ]]; then
   exit 1
 fi
 
-# https://www.terraform.io/cloud-docs/api-docs/organizations#show-an-organization
-tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}" "${httpclient_args[@]}" --no-paginate
+# https://www.terraform.io/cloud-docs/api-docs/teams#list-teams
+tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/teams" "${httpclient_args[@]}"

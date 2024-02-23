@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+# shellcheck disable=SC1091
+. "${BASH_SOURCE%/*}/helpers.sh"
+
+unset arg_team_id
+unset arg_team_name
+
+httpclient_args=()
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    break
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--force" ) # option: refresh cache
+    :
+    ;;
+  "--help" ) # option: display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--team-id" | "--team-id="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_team_id="${1#*=}"
+    else
+      arg_team_id="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--team-name" | "--team-name="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_team_name="${1#*=}"
+    else
+      arg_team_name="${2:-}"
+      shift 1
+    fi
+    ;;
+  * )
+    httpclient_args+=("${1:-}")
+    ;;
+  esac
+  shift 1
+done
+
+if [[ -z "${arg_team_id:-}" ]]; then
+  if [[ -z "${arg_team_name:-}" ]]; then
+    log_error "${0##*/}: team id was not given"
+    exit 1
+  else
+    arg_team_id="$(tfc-list-teams | jq \
+      --arg arg_team_name "${arg_team_name}" \
+      --raw-output \
+      '.data[] | select(.attributes.name == $arg_team_name) | .id' \
+    )"
+    if [[ -z "${arg_team_id:-}" ]]; then
+      log_error "${0##*/}: unable to resolve team id: ${arg_team_name:-}"
+      exit 1
+    fi
+  fi
+fi
+
+# https://www.terraform.io/cloud-docs/api-docs/teams#show-team-information
+tfc-helper-httpclient --request-path="/teams/${arg_team_id}" "${httpclient_args[@]}" --no-paginate

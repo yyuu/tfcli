@@ -4,6 +4,7 @@ set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
+# shellcheck disable=SC1091
 . "${BASH_SOURCE%/*}/helpers.sh"
 
 unset arg_max_items

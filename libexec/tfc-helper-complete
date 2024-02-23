@@ -4,6 +4,7 @@ set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
+# shellcheck disable=SC1091
 . "${BASH_SOURCE%/*}/helpers.sh"
 
 unset arg_command
@@ -48,7 +49,7 @@ while IFS='' read -r line; do case_patterns+=("$line"); done < <(sed -e '/^[[:sp
 
 if [[ ${#case_patterns[*]} -gt 0 ]]; then
   { for case_pattern in "${case_patterns[@]+"${case_patterns[@]}"}"; do
-      echo "${case_pattern%%${case_pattern_tag}*}" | tr -d '"' | tr -d "'" | tr -d ' ' | sed -e 's/=[^[:space:]]*//g' -e 's/|/\n/g'
+      echo "${case_pattern%%"${case_pattern_tag}"*}" | tr -d '"' | tr -d "'" | tr -d ' ' | sed -e 's/=[^[:space:]]*//g' -e 's/|/\n/g'
     done
   } | sort | uniq
 fi
