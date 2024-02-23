@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+. "${BASH_SOURCE%/*}/helpers.sh"
+
+httpclient_args=()
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    break
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--help" ) # option: display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  * )
+    httpclient_args+=("${1:-}")
+    ;;
+  esac
+  shift 1
+done
+
+# https://www.terraform.io/cloud-docs/api-docs/organizations#list-organizations
+tfc-helper-httpclient --request-path="/organizations" "${httpclient_args[@]}"
