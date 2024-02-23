@@ -4,9 +4,6 @@ set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
-# shellcheck disable=SC1091
-. "${BASH_SOURCE%/*}/helpers.sh"
-
 unset arg_team_id
 unset arg_team_name
 
@@ -53,7 +50,7 @@ done
 
 if [[ -z "${arg_team_id:-}" ]]; then
   if [[ -z "${arg_team_name:-}" ]]; then
-    log_error "${0##*/}: team id was not given"
+    tfc-helper-logger --level=error "${0##*/}: team id was not given"
     exit 1
   else
     arg_team_id="$(tfc-list-teams | jq \
@@ -62,7 +59,7 @@ if [[ -z "${arg_team_id:-}" ]]; then
       '.data[] | select(.attributes.name == $arg_team_name) | .id' \
     )"
     if [[ -z "${arg_team_id:-}" ]]; then
-      log_error "${0##*/}: unable to resolve team id: ${arg_team_name:-}"
+      tfc-helper-logger --level=error "${0##*/}: unable to resolve team id: ${arg_team_name:-}"
       exit 1
     fi
   fi

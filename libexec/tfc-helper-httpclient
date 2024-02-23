@@ -4,9 +4,6 @@ set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
-# shellcheck disable=SC1091
-. "${BASH_SOURCE%/*}/helpers.sh"
-
 unset arg_max_items
 unset arg_output
 unset arg_page_number
@@ -98,12 +95,12 @@ while [[ $# -gt 0 ]]; do
 done
 
 if ! command -v curl 1>/dev/null 2>&1; then
-  log_error "${0##*/}: curl is not available"
+  tfc-helper-logger --level=error "${0##*/}: curl is not available"
   exit 1
 fi
 
 if ! command -v curl 1>/dev/null 2>&1; then
-  log_error "${0##*/}: jq is not available"
+  tfc-helper-logger --level=error "${0##*/}: jq is not available"
   exit 1
 fi
 
@@ -116,7 +113,7 @@ curl_version_minor="$(cut -d. -f2 <<< "${curl_version:-}")"
 curl_args+=("--fail")
 
 if [[ -z "${TF_CLOUD_TOKEN:-}" ]]; then
-  log_error "${0##*/}: TF_CLOUD_TOKEN is not set"
+  tfc-helper-logger --level=error "${0##*/}: TF_CLOUD_TOKEN is not set"
   exit 1
 fi
 curl_args+=("--header" "authorization: Bearer ${TF_CLOUD_TOKEN}")
@@ -148,7 +145,7 @@ else
 fi
 
 if [[ -z "${arg_request_path:-}" ]]; then
-  log_error "${0##*/}: request path was not given"
+  tfc-helper-logger --level=error "${0##*/}: request path was not given"
   exit 1
 fi
 
@@ -175,13 +172,13 @@ if [[ -z "${arg_paginate:-}" ]]; then
       cat
       ;;
     * )
-      log_error "${0##*/}: unknown output format: ${arg_output:-}"
+      tfc-helper-logger --level=error "${0##*/}: unknown output format: ${arg_output:-}"
       exit 1
       ;;
     esac
 else
   if [[ "${arg_output:-json}" != "json" ]]; then
-    log_error "${0##*/}: unsupported output format: ${arg_output:-}"
+    tfc-helper-logger --level=error "${0##*/}: unsupported output format: ${arg_output:-}"
     exit 1
   fi
   total_items=0
@@ -203,7 +200,7 @@ else
   done
   echo 1>&2
   if [[ ${#resps[*]} -eq 0 ]]; then
-    log_error "${0##*/}: something went wrong. no response was captured from ${next_page}"
+    tfc-helper-logger --level=error "${0##*/}: something went wrong. no response was captured from ${next_page}"
     exit 1
   else
     if [[ ${#resps[*]} -eq 1 ]]; then

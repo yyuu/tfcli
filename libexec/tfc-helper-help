@@ -4,9 +4,6 @@ set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
-# shellcheck disable=SC1091
-. "${BASH_SOURCE%/*}/helpers.sh"
-
 unset arg_command
 
 while [[ $# -gt 0 ]]; do
@@ -29,7 +26,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "${arg_command:-}" ]]; then
-  log_error "${0##*/}: command name was not given"
+  tfc-helper-logger --level=error "${0##*/}: command name was not given"
   exit 1
 fi
 
@@ -40,7 +37,7 @@ if [[ -z "${command_file:-}" ]]; then
 fi
 
 if [[ -z "${command_file:-}" ]]; then
-  log_error "${0##*/}: command not found"
+  tfc-helper-logger --level=error "${0##*/}: command not found"
   exit 1
 fi
 

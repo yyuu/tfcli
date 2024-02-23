@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+unset arg_level
+arg_messages=()
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    break
+    ;;
+  "--complete" )
+    exit 0
+    ;;
+  "--help" )
+    exit 0
+    ;;
+  "--level" | "--level="* ) # option: log level
+    if [[ "$1" == *"="* ]]; then
+      arg_level="${1#*=}"
+    else
+      arg_level="${2:-}"
+      shift 1
+    fi
+    ;;
+  * )
+    arg_messages+=("${1:-}")
+    ;;
+  esac
+  shift 1
+done
+
+if [[ -n "${VERBOSE:-}" ]] || [[ "${VERBOSITY:-2}" -ge 2 ]]; then
+  { if [[ -t 2 ]]; then
+      case "${arg_level:-}" in
+      "info")
+        printf '\033[0;32m'
+        ;;
+      "warn" )
+        printf '\033[0;33m'
+        ;;
+      "error" )
+        printf '\033[0;31m'
+        ;;
+      * )
+        printf '\033[0;37m'
+        ;;
+      esac
+    fi
+    if [[ ${#arg_messages[@]} -eq 0 ]]; then
+      cat
+    else
+      printf '%s\n' "${arg_messages[@]}"
+    fi
+    if [[ -t 2 ]]; then
+      printf '\033[0m'
+    fi
+  } 1>&2
+fi

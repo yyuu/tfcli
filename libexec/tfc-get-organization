@@ -4,9 +4,6 @@ set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
-# shellcheck disable=SC1091
-. "${BASH_SOURCE%/*}/helpers.sh"
-
 unset arg_organization_name
 
 httpclient_args=()
@@ -44,7 +41,7 @@ if [[ -z "${arg_organization_name:-}" ]]; then
 fi
 
 if [[ -z "${arg_organization_name:-}" ]]; then
-  log_error "${0##*/}: organization name was not given"
+  tfc-helper-logger --level=error "${0##*/}: organization name was not given"
   exit 1
 fi
 

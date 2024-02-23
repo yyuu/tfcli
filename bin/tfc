@@ -28,9 +28,6 @@ TFCLI_PREFIX="$(cd "${TFCLI_MAIN%/*}/.." && pwd)"
 LIBEXEC_DIR="${TFCLI_PREFIX}/libexec"
 export PATH="${LIBEXEC_DIR}:${PATH}"
 
-# shellcheck disable=SC1091
-. "${LIBEXEC_DIR}/helpers.sh"
-
 unset arg_action
 
 options=()
