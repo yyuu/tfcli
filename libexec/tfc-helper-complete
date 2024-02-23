@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+. "${BASH_SOURCE%/*}/helpers.sh"
+
+unset arg_command
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    break
+    ;;
+  "--complete" )
+    exit 0
+    ;;
+  "--help" )
+    exit 0
+    ;;
+  * )
+    arg_command="${1:-}"
+    ;;
+  esac
+  shift 1
+done
+
+if [[ -z "${arg_command:-}" ]]; then
+  log_error "${0##*/}: command name was not given"
+  exit 1
+fi
+
+command_file="$(command -v "tfc-${arg_command}" 2>/dev/null || true)"
+
+if [[ -z "${command_file:-}" ]]; then
+  command_file="$(command -v "${arg_command}" 2>/dev/null || true)"
+fi
+
+if [[ -z "${command_file:-}" ]]; then
+  log_error "${0##*/}: command not found"
+  exit 1
+fi
+
+case_pattern_tag=" ) # option: "
+case_patterns=()
+while IFS='' read -r line; do case_patterns+=("$line"); done < <(sed -e '/^[[:space:]]*#/d' "${command_file}" | sed -n -e '/^while \[* \$# -gt 0 \]*; do$/,/^done$/p' | grep -F -h "${case_pattern_tag}")
+
+if [[ ${#case_patterns[*]} -gt 0 ]]; then
+  { for case_pattern in "${case_patterns[@]+"${case_patterns[@]}"}"; do
+      echo "${case_pattern%%${case_pattern_tag}*}" | tr -d '"' | tr -d "'" | tr -d ' ' | sed -e 's/=[^[:space:]]*//g' -e 's/|/\n/g'
+    done
+  } | sort | uniq
+fi

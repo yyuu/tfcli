@@ -1,0 +1,163 @@
+#!/usr/bin/env bash
+# summary: Terraform Cloud API client
+# usage: tfc [COMMAND] [OPTIONS]
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+TMPDIR="$(mktemp -d)"
+export TMPDIR
+
+on_exit() {
+  rm -fr "${TMPDIR}"
+}
+
+trap on_exit EXIT
+
+TFCLI_MAIN="${BASH_SOURCE[0]}"
+while [[ -L "${TFCLI_MAIN}" ]]; do
+  name="$(cd "${TFCLI_MAIN%/*}" && readlink "${TFCLI_MAIN##*/}")"
+  if [[ "${name}" == "/"* ]]; then
+    TFCLI_MAIN="${name}"
+  else
+    TFCLI_MAIN="${TFCLI_MAIN%/*}/${name}"
+  fi
+done
+TFCLI_PREFIX="$(cd "${TFCLI_MAIN%/*}/.." && pwd)"
+LIBEXEC_DIR="${TFCLI_PREFIX}/libexec"
+export PATH="${LIBEXEC_DIR}:${PATH}"
+
+# shellcheck disable=SC1091
+. "${LIBEXEC_DIR}/helpers.sh"
+
+unset arg_action
+
+options=()
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    break
+    ;;
+  "--debug" ) # option: enable debug mode
+    set -x
+    ;;
+  "commands" ) # option: list available commands
+    arg_action="$1"
+    ;;
+  "completions" ) # option: internal interface for shell completion
+    arg_action="$1"
+    ;;
+  "help" | "--help" ) # option: display help message
+    arg_action="helper-help"
+    options+=("${BASH_SOURCE[0]}")
+    ;;
+  "init" ) # option: initialize shell completion
+    arg_action="$1"
+    ;;
+  "version" | "--version" ) # option: display version information
+    TFCLI_VERSION="@@VERSION@@"
+    if [[ "${TFCLI_VERSION:-}" == "@@"*"@@" ]]; then
+      TFCLI_VERSION="n/a" # TODO: read from git tag...?
+    fi
+    echo "${0##*/} ${TFCLI_VERSION:-}"
+    exit 0
+    ;;
+  * ) # option: command name and its options
+    if [[ -z "${arg_action:-}" ]]; then
+      arg_action="$1"
+    else
+      options+=("${1:-}")
+    fi
+    ;;
+  esac
+  shift 1
+done
+
+if [[ $# -gt 1 ]]; then
+  shift 1
+  options+=("$@")
+fi
+
+case "${arg_action:-config}" in
+"init" )
+  if [[ ${#options[*]} -gt 0 ]]; then
+    shtype="${options[0]}"
+  else
+    shtype="${SHELL:-/bin/sh}"
+  fi
+  case "${shtype##*/}" in
+  "bash" )
+    cat <<"EOS"
+_tfc() {
+  COMPREPLY=()
+  local word="${COMP_WORDS[COMP_CWORD]}"
+
+  if [ "$COMP_CWORD" -eq 1 ]; then
+    COMPREPLY=( $(compgen -W "$(tfc commands)" -- "$word") )
+  else
+    local words=("${COMP_WORDS[@]}")
+    unset words[0]
+    unset words[$COMP_CWORD]
+    local completions=$(tfc completions "${words[@]}")
+    COMPREPLY=( $(compgen -W "$completions" -- "$word") )
+  fi
+}
+
+complete -F _tfc tfc
+complete -F _tfc tfcli
+EOS
+    ;;
+  "zsh" )
+    cat <<"EOS"
+if [[ ! -o interactive ]]; then
+  return
+fi
+
+compctl -K _tfc tfc
+compctl -K _tfc tfcli
+
+_tfc() {
+  local words completions
+  read -cA words
+
+  if [ "${#words}" -eq 2 ]; then
+    completions="$(tfc commands)"
+  else
+    completions="$(tfc completions ${words[2,-2]})"
+  fi
+
+  reply=(${(ps:\n:)completions})
+}
+EOS
+    ;;
+  esac
+  ;;
+"commands" )
+  shopt -s nullglob
+  for libexec in "${LIBEXEC_DIR}/"*; do
+    name="${libexec##*/}"
+    case "${name:-}" in
+    "tfc-"* )
+      echo "${name##tfc-}"
+      ;;
+    esac
+  done
+  shopt -u nullglob
+  ;;
+"completions" )
+  echo "--help"
+  if command -v "tfc-${options[0]}" 1>/dev/null 2>&1; then
+    "tfc-${options[0]}" --complete
+  fi
+  ;;
+* )
+  if [[ -n "${arg_action:-}" ]] && command -v "tfc-${arg_action}" 1>/dev/null 2>&1; then
+    "tfc-${arg_action}" "${options[@]}"
+  else
+    echo "${0##*/}: error: unrecognized action: ${arg_action:-}" 1>&2
+    exit 1
+  fi
+  ;;
+esac
