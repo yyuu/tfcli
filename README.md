@@ -13,6 +13,12 @@ Command-line interface to interact with [Terraform Cloud](https://app.terraform.
     * `TF_WORKSPACE` (optional)
 1. (optional) Setup command line completion for your bash or zsh
 
+### Install via Homebrew
+
+```sh
+% brew install yyuu/tfcli/tfcli
+```
+
 ### Install manually
 
 1. Add `./bin` into your `$PATH`
