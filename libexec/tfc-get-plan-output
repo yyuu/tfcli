@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+. "${BASH_SOURCE%/*}/helpers.sh"
+
+unset arg_output
+unset arg_plan_id
+unset arg_run_id
+
+httpclient_args=()
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    break
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--debug" )
+    set -x
+    ;;
+  "--help" ) # option: display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--output" | "--output="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_output="${1#*=}"
+    else
+      arg_output="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--plan-id" | "--plan-id="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_plan_id="${1#*=}"
+    else
+      arg_plan_id="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--run-id" | "--run-id="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_run_id="${1#*=}"
+    else
+      arg_run_id="${2:-}"
+      shift 1
+    fi
+    ;;
+  * )
+    httpclient_args+=("${1:-}")
+    ;;
+  esac
+  shift 1
+done
+
+TMPDIR="$(mktemp -d)"
+
+on_exit() {
+  rm -fr "${TMPDIR}"
+}
+
+trap on_exit EXIT
+
+resp="$(mktemp "${TMPDIR}/resp.XXXXXXXX")"
+if [[ -z "${arg_plan_id:-}" ]]; then
+  if [[ -z "${arg_run_id:-}" ]]; then
+    tfc-helper-logger --level=error "${0##*/}: both plan id and run id were not given"
+    exit 1
+  else
+    # https://www.terraform.io/cloud-docs/api-docs/plans#retrieve-the-json-execution-plan
+    tfc-helper-httpclient --request-path="/runs/${arg_run_id}/plan/json-output" "${httpclient_args[@]}" --no-paginate --output=text > "${resp}"
+  fi
+else
+  # https://www.terraform.io/cloud-docs/api-docs/plans#retrieve-the-json-execution-plan
+  tfc-helper-httpclient --request-path="/plans/${arg_plan_id}/json-output" "${httpclient_args[@]}" --no-paginate --output=text > "${resp}"
+fi
+
+# Despite the API naming, this API doesn't return JSON but HTML....
+json_output_uri="$(sed -n -e 's/^.* href="\([^"]*\)".*$/\1/p' < "${resp}" | head -1)"
+if [[ -z "${json_output_uri:-}" ]]; then
+  if [[ -z "${arg_plan_id:-}" ]]; then
+    arg_plan_id="$(tfc-get-run --run-id="${arg_run_id}" --output=json | jq --raw-output '.data.relationships.plan.data.id')"
+  fi
+  log_read_url="$(tfc-get-plan --plan-id="${arg_plan_id}" --output=json | jq --raw-output '.data.attributes["log-read-url"]')"
+  log_warn "${0##*/}: failed to obtain an URI for json-output (error during plan run?)"
+  if [[ -z "${log_read_url:-}" ]]; then
+    :
+  else
+    curl \
+      --fail \
+      --max-time 30 \
+      --retry 5 \
+      --retry-max-time 60 \
+      --silent \
+      "${log_read_url}" \
+      | sed -n -e '/^{/p' \
+      | jq .
+  fi
+  exit 1
+fi
+
+curl \
+  --fail \
+  --max-time 30 \
+  --retry 5 \
+  --retry-max-time 60 \
+  --silent \
+  "${json_output_uri}" | \
+  case "${arg_output:-diff}" in
+  "diff" )
+    cat > "${TMPDIR}/output.json"
+    mapfile -t addresses < <(jq --raw-output '.resource_changes | map(.address)[]' "${TMPDIR}/output.json")
+    for address in "${addresses[@]}"; do
+      resource_change="$(jq --arg address "${address}" '.resource_changes | map(select(.address == $address))[0]' "${TMPDIR}/output.json")"
+      change_actions="$(jq --raw-output '.change.actions | join(",")' <<< "${resource_change}")"
+      if [[ "${change_actions:-}" != "no-op" ]]; then
+        resource_provider_name="$(jq --raw-output '.provider_name' <<< "${resource_change}")"
+        resource_module_address="$(jq --raw-output '.module_address' <<< "${resource_change}")"
+        resource_type="$(jq --raw-output '.type' <<< "${resource_change}")"
+        resource_mode="$(jq --raw-output '.mode' <<< "${resource_change}")"
+        resource_name="$(jq --raw-output '.name' <<< "${resource_change}")"
+        cat <<EOS
+---
+${address}:
+  provider_name: ${resource_provider_name}
+  module_address: ${resource_module_address}
+  type: ${resource_type}
+  mode: ${resource_mode}
+  name: ${resource_name}
+  diff: |
+EOS
+        # expanding nested JSON-like string in aggressive manner. although this could be not always be right behaviour
+        { diff -u \
+          <(jq --raw-output --sort-keys '.change.before | to_entries | map(.key as $key | .value as $value | {key: $key, value: (try (.value | fromjson) catch $value)}) | from_entries' <<< "${resource_change}" 2>/dev/null || true) \
+          <(jq --raw-output --sort-keys '.change.after | to_entries | map(.key as $key | .value as $value | {key: $key, value: (try (.value | fromjson) catch $value)}) | from_entries' <<< "${resource_change}" 2>/dev/null || true) \
+          || true
+        } | sed -e 's/^/    /'
+      fi
+    done
+    ;;
+  "json" )
+    jq .
+    ;;
+  "text" )
+    cat
+    ;;
+  * )
+    log_error "${0##*/}: unknown output format: ${arg_output:-}"
+    exit 1
+    ;;
+  esac

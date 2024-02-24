@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+unset arg_workspace_id
+
+arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
+arg_workspace_name="${TF_WORKSPACE:-}"
+httpclient_args=()
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    break
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--debug" )
+    set -x
+    ;;
+  "--help" ) # option: display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--organization-name" | "--organization-name="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_organization_name="${1#*=}"
+    else
+      arg_organization_name="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--workspace-id" | "--workspace-id="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_workspace_id="${1#*=}"
+    else
+      arg_workspace_id="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--workspace-name" | "--workspace-name="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_workspace_name="${1#*=}"
+    else
+      arg_workspace_name="${2:-}"
+      shift 1
+    fi
+    ;;
+  * )
+    httpclient_args+=("${1:-}")
+    ;;
+  esac
+  shift 1
+done
+
+TMPDIR="$(mktemp -d)"
+
+on_exit() {
+  rm -fr "${TMPDIR}"
+}
+
+trap on_exit EXIT
+
+if [[ -z "${arg_workspace_id:-}" ]]; then
+  if [[ -z "${arg_workspace_name:-}" ]]; then
+    tfc-helper-logger --level=error "${0##*/}: workspace id was not given"
+    exit 1
+  else
+    arg_workspace_id="$(tfc-get-workspace --workspace-name ${arg_workspace_name} | jq --raw-output '.data.id')"
+  fi
+
+  if [[ -z "${arg_workspace_name:-}" ]]; then
+    tfc-helper-logger --level=error "${0##*/}: workspace name was not given"
+    exit 1
+  fi
+fi
+
+if [[ -z "${arg_organization_name:-}" ]]; then
+  tfc-helper-logger --level=error "${0##*/}: organization name was not given"
+  exit 1
+fi
+
+resp="$(mktemp "${TMPDIR}/resp.XXXXXXXX")"
+if tfc-get-current-state-version --workspace-id "${arg_workspace_id}" > "${resp}"; then
+  :
+else
+  tfc-helper-logger --level=error "${0##*/}: unable to get the current state version from workspace: ${arg_workspace_id}"
+  exit 1
+fi
+
+hosted_state_id="$(jq --raw-output '.data.id' < "${resp}")"
+hosted_state_download_url=$(jq --raw-output '.data.attributes."hosted-state-download-url"' < "${resp}")
+
+curl \
+  --fail \
+  --max-time 30 \
+  --request GET \
+  --retry 5 \
+  --retry-max-time 60 \
+  --silent \
+  "${hosted_state_download_url}" \
+  | jq \
+    --arg hosted_state_id "${hosted_state_id}" \
+    '{
+      data: {
+        id: $hosted_state_id,
+        type: "hosted-states",
+        attributes: .,
+        links: {},
+        relationships: {}
+      }
+    }'

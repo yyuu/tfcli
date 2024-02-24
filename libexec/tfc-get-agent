@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+unset arg_agent_id
+
+httpclient_args=()
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    break
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--debug" )
+    set -x
+    ;;
+  "--help" ) # option: display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--agent-id" | "--agent-id="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_agent_id="${1#*=}"
+    else
+      arg_agent_id="${2:-}"
+      shift 1
+    fi
+    ;;
+  * )
+    httpclient_args+=("${1:-}")
+    ;;
+  esac
+  shift 1
+done
+
+if [[ -z "${arg_agent_id:-}" ]]; then
+  tfc-helper-logger --level=error "${0##*/}: agent id was not given"
+  exit 1
+fi
+
+# https://www.terraform.io/cloud-docs/api-docs/agents#show-an-agent
+tfc-helper-httpclient --request-path="/agents/${arg_agent_id}" "${httpclient_args[@]}" --no-paginate

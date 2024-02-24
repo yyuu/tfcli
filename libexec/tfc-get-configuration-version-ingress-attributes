@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+unset arg_configuration_version_id
+
+httpclient_args=()
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    break
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--debug" )
+    set -x
+    ;;
+  "--help" ) # option: display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--configuration-version-id" | "--configuration-version-id="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_configuration_version_id="${1#*=}"
+    else
+      arg_configuration_version_id="${2:-}"
+      shift 1
+    fi
+    ;;
+  * )
+    httpclient_args+=("${1:-}")
+    ;;
+  esac
+  shift 1
+done
+
+if [[ -z "${arg_configuration_version_id:-}" ]]; then
+  tfc-helper-logger --level=error "${0##*/}: configuration version id was not given"
+  exit 1
+fi
+
+tfc-helper-httpclient --request-path="/configuration-versions/${arg_configuration_version_id}/ingress-attributes" "${httpclient_args[@]}" --no-paginate

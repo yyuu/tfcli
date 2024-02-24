@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+unset arg_name
+unset arg_namespace
+unset arg_registry_name
+
+arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
+httpclient_args=()
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    break
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--debug" )
+    set -x
+    ;;
+  "--help" ) # option: display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--name" | "--name="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_name="${1#*=}"
+    else
+      arg_name="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--namespace" | "--namespace="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_namespace="${1#*=}"
+    else
+      arg_namespace="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--organization-name" | "--organization-name="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_organization_name="${1#*=}"
+    else
+      arg_organization_name="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--registry-name" | "--registry-name="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_registry_name="${1#*=}"
+    else
+      arg_registry_name="${2:-}"
+      shift 1
+    fi
+    ;;
+  * )
+    httpclient_args+=("${1:-}")
+    ;;
+  esac
+  shift 1
+done
+
+if [[ -z "${arg_organization_name:-}" ]]; then
+  tfc-helper-logger --level=error "${0##*/}: organization name was not given"
+  exit 1
+fi
+
+if [[ -z "${arg_registry_name:-}" ]]; then
+  tfc-helper-logger --level=error "${0##*/}: registry name was not given"
+  exit 1
+fi
+
+if [[ -z "${arg_namespace:-}" ]]; then
+  tfc-helper-logger --level=error "${0##*/}: namespace was not given"
+  exit 1
+fi
+
+if [[ -z "${arg_name:-}" ]]; then
+  tfc-helper-logger --level=error "${0##*/}: name was not given"
+  exit 1
+fi
+
+# https://www.terraform.io/cloud-docs/api-docs/private-registry/providers#get-a-provider
+tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/registry-providers/${arg_registry_name}/${arg_namespace}/${arg_name}" "${httpclient_args[@]}" --no-paginate
