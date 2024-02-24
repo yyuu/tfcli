@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+unset arg_plan_id
+
+httpclient_args=()
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    break
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--debug" )
+    set -x
+    ;;
+  "--help" ) # option: display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--plan-id" | "--plan-id="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_plan_id="${1#*=}"
+    else
+      arg_plan_id="${2:-}"
+      shift 1
+    fi
+    ;;
+  * )
+    httpclient_args+=("${1:-}")
+    ;;
+  esac
+  shift 1
+done
+
+if [[ -z "${arg_plan_id:-}" ]]; then
+  tfc-helper-logger --level=error "${0##*/}: plan id was not given"
+  exit 1
+fi
+
+payload="$(jq --arg plan_id "${arg_plan_id}" --compact-output --null-input '{
+  "data": {
+    "type": "plan-exports",
+    "attributes": {
+      "data-type": "sentinel-mock-bundle-v0"
+    },
+    "relationships": {
+      "plan": {
+        "data": {
+          "id": $plan_id,
+          "type": "plans"
+        }
+      }
+    }
+  }
+}')"
+
+# https://www.terraform.io/cloud-docs/api-docs/plan-exports#create-a-plan-export
+tfc-helper-httpclient --data "${payload}" --request-path="/plan-exports" --request POST "${httpclient_args[@]}" --no-paginate
