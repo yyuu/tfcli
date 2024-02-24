@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+unset arg_workspace_id
+
+arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
+arg_workspace_name="${TF_WORKSPACE:-}"
+httpclient_args=()
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    break
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--debug" )
+    set -x
+    ;;
+  "--help" ) # option: display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--organization-name" | "--organization-name="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_organization_name="${1#*=}"
+    else
+      arg_organization_name="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--workspace-name" | "--workspace-name="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_workspace_name="${1#*=}"
+    else
+      arg_workspace_name="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--workspace-id" | "--workspace-id="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_workspace_id="${1#*=}"
+    else
+      arg_workspace_id="${2:-}"
+      shift 1
+    fi
+    ;;
+  * )
+    httpclient_args+=("${1:-}")
+    ;;
+  esac
+  shift 1
+done
+
+if [[ -z "${arg_workspace_id:-}" ]]; then
+  if [[ -z "${arg_workspace_name:-}" ]]; then
+    tfc-helper-logger --level=error "${0##*/}: workspace name is not given"
+    exit 1
+  else
+    arg_workspace_id="$(tfc-get-workspace --workspace-name="${arg_workspace_name}" | jq --raw-output '.data.id')"
+  fi
+fi
+
+# https://www.terraform.io/cloud-docs/api-docs/workspace-variables#list-variables
+tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}/vars" "${httpclient_args[@]}"
