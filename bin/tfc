@@ -37,9 +37,6 @@ while [[ $# -gt 0 ]]; do
   "--" )
     break
     ;;
-  "--debug" ) # option: enable debug mode
-    set -x
-    ;;
   "commands" ) # option: list available commands
     arg_action="$1"
     ;;

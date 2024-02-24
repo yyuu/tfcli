@@ -4,7 +4,7 @@ set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
-unset arg_names
+unset arg_search_name
 
 arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
 httpclient_args=()
@@ -28,19 +28,19 @@ while [[ $# -gt 0 ]]; do
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
     ;;
-  "--names" | "--names="* ) # option: if specified, restricts results to a team with a matching name. If multiple comma separated values are specified, teams matching any of the names are returned.
-    if [[ "$1" == *"="* ]]; then
-      arg_names="${1#*=}"
-    else
-      arg_names="${2:-}"
-      shift 1
-    fi
-    ;;
   "--organization-name" | "--organization-name="* ) # option: TODO
     if [[ "$1" == *"="* ]]; then
       arg_organization_name="${1#*=}"
     else
       arg_organization_name="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--search-name" | "--search-name="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_search_name="${1#*=}"
+    else
+      arg_search_name="${2:-}"
       shift 1
     fi
     ;;
@@ -51,14 +51,10 @@ while [[ $# -gt 0 ]]; do
   shift 1
 done
 
-if [[ -n "${arg_names:-}" ]]; then
-  httpclient_args+=("--get" "--data" "filter[names]=${arg_names}")
-fi
-
 if [[ -z "${arg_organization_name:-}" ]]; then
   tfc-helper-logger --level=error "${0##*/}: organization name was not given"
   exit 1
 fi
 
-# https://www.terraform.io/cloud-docs/api-docs/teams#list-teams
-tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/teams" "${httpclient_args[@]}"
+# https://www.terraform.io/cloud-docs/api-docs/workspaces#list-workspaces
+tfc-helper-httpclient --page-size=50 --request-path="/organizations/${arg_organization_name}/workspaces" "${httpclient_args[@]}"

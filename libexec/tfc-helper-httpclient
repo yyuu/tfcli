@@ -20,30 +20,30 @@ while [[ $# -gt 0 ]]; do
   "--" )
     break
     ;;
-  "--help" ) # option: display help message
-    tfc-helper-help "${BASH_SOURCE##*/}"
-    exit 0
-    ;;
-  "--no-paginate" ) # option: disable automatic pagination
-   unset arg_paginate
+  "--debug" )
+    set -x
     ;;
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
     exit 0
     ;;
-  "--output" | "--output="* ) # option: TODO
-    if [[ "$1" == *"="* ]]; then
-      arg_output="${1#*=}"
-    else
-      arg_output="${2:-}"
-      shift 1
-    fi
+  "--help" ) # option: display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
     ;;
   "--max-items" | "--max-items="* ) # option: TODO
     if [[ "$1" == *"="* ]]; then
       arg_max_items="${1#*=}"
     else
       arg_max_items="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--output" | "--output="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_output="${1#*=}"
+    else
+      arg_output="${2:-}"
       shift 1
     fi
     ;;
@@ -61,6 +61,13 @@ while [[ $# -gt 0 ]]; do
     else
       arg_page_size="${2:-}"
       shift 1
+    fi
+    ;;
+  "--paginate" | "--no-paginate" ) # option: enable or disable automatic pagination
+    if [[ "$1" == "--no-"* ]]; then
+      arg_paginate=
+    else
+      arg_paginate=1
     fi
     ;;
   "--request" | "--request="* | "-X" ) # option: TODO

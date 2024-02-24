@@ -4,8 +4,7 @@ set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
-unset arg_organization_name
-
+arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
 httpclient_args=()
 
 while [[ $# -gt 0 ]]; do
@@ -16,6 +15,9 @@ while [[ $# -gt 0 ]]; do
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
     exit 0
+    ;;
+  "--debug" )
+    set -x
     ;;
   "--help" ) # option: display help message
     tfc-helper-help "${BASH_SOURCE##*/}"
@@ -35,10 +37,6 @@ while [[ $# -gt 0 ]]; do
   esac
   shift 1
 done
-
-if [[ -z "${arg_organization_name:-}" ]]; then
-  arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
-fi
 
 if [[ -z "${arg_organization_name:-}" ]]; then
   tfc-helper-logger --level=error "${0##*/}: organization name was not given"

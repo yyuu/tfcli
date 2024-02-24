@@ -18,6 +18,9 @@ while [[ $# -gt 0 ]]; do
     tfc-helper-complete "${BASH_SOURCE##*/}"
     exit 0
     ;;
+  "--debug" )
+    set -x
+    ;;
   "--force" ) # option: refresh cache
     :
     ;;

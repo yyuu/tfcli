@@ -7,7 +7,7 @@ Command-line interface to interact with [Terraform Cloud](https://app.terraform.
 1. Go to https://app.terraform.io/app/settings/tokens, and issue a Terraform Cloud User token
 1. Setup environment variables to specify your Terraform Cloud settings (naming conventions are based on https://www.terraform.io/cli/cloud/settings#environment-variables)
     * `TF_CLOUD_TOKEN`
-    * `TF_CLOUD_ORGANIZATION`
+    * `TF_CLOUD_ORGANIZATION` (optional)
     * `TF_CLOUD_HOSTNAME` (optional)
     * `TF_CLOUD_PROJECT` (optional)
     * `TF_WORKSPACE` (optional)
