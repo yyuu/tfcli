@@ -15,7 +15,10 @@ Command-line interface to interact with [Terraform Cloud](https://app.terraform.
 
 ### Install via Homebrew
 
+You can also install via [Homebrew](https://brew.sh/) like follows.
+
 ```sh
+% brew tap yyuu/tfcli https://github.com/yyuu/tfcli
 % brew install yyuu/tfcli/tfcli
 ```
 
