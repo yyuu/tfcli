@@ -70,7 +70,7 @@ if [[ -z "${arg_workspace_id:-}" ]]; then
     tfc-helper-logger --level=error "${0##*/}: workspace id was not given"
     exit 1
   else
-    arg_workspace_id="$(tfc-get-workspace --workspace-name ${arg_workspace_name} | jq --raw-output '.data.id')"
+    arg_workspace_id="$(tfc-get-workspace --workspace-name="${arg_workspace_name}" | jq --raw-output '.data.id')"
   fi
 
   if [[ -z "${arg_workspace_name:-}" ]]; then
@@ -85,7 +85,7 @@ if [[ -z "${arg_organization_name:-}" ]]; then
 fi
 
 resp="$(mktemp "${TMPDIR}/resp.XXXXXXXX")"
-if tfc-get-current-state-version --workspace-id "${arg_workspace_id}" > "${resp}"; then
+if tfc-get-current-state-version --workspace-id="${arg_workspace_id}" > "${resp}"; then
   :
 else
   tfc-helper-logger --level=error "${0##*/}: unable to get the current state version from workspace: ${arg_workspace_id}"

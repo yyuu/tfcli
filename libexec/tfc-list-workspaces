@@ -4,8 +4,6 @@ set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
-unset arg_search_name
-
 arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
 httpclient_args=()
 
@@ -33,14 +31,6 @@ while [[ $# -gt 0 ]]; do
       arg_organization_name="${1#*=}"
     else
       arg_organization_name="${2:-}"
-      shift 1
-    fi
-    ;;
-  "--search-name" | "--search-name="* ) # option: TODO
-    if [[ "$1" == *"="* ]]; then
-      arg_search_name="${1#*=}"
-    else
-      arg_search_name="${2:-}"
       shift 1
     fi
     ;;

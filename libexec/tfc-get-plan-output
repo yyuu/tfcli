@@ -4,8 +4,6 @@ set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
-. "${BASH_SOURCE%/*}/helpers.sh"
-
 unset arg_output
 unset arg_plan_id
 unset arg_run_id
