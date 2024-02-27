@@ -16,6 +16,10 @@ while [[ $# -gt 0 ]]; do
     ;;
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="Organizations" --id-glob='*' | \
+      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
+    tfc-helper-cache-get --table="Teams" --id-glob='*' | \
+      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
     exit 0
     ;;
   "--debug" )
@@ -61,4 +65,5 @@ if [[ -z "${arg_organization_name:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/teams#list-teams
-tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/teams" "${httpclient_args[@]}"
+tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/teams" "${httpclient_args[@]}" | \
+  tfc-helper-cache-set --table="Teams"

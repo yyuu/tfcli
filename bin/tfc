@@ -28,6 +28,13 @@ TFCLI_PREFIX="$(cd "${TFCLI_MAIN%/*}/.." && pwd)"
 LIBEXEC_DIR="${TFCLI_PREFIX}/libexec"
 export PATH="${LIBEXEC_DIR}:${PATH}"
 
+export TFCLI_DBFILE="${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}"
+mkdir -p "${TFCLI_DBFILE%/*}"
+
+export TFCLI_CACHE_EXPIRY="${TFCLI_CACHE_EXPIRY:-8640000}" # 100 days
+
+export SQLITE_BUSY_TIMEOUT="${SQLITE_BUSY_TIMEOUT:-60000}"
+
 unset arg_action
 
 options=()

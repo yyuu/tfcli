@@ -17,6 +17,10 @@ while [[ $# -gt 0 ]]; do
     ;;
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="Organizations" --id-glob='*' | \
+      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
+    tfc-helper-cache-get --table="Workspaces" --id-glob='*' | \
+      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
     exit 0
     ;;
   "--debug" )
@@ -67,14 +71,18 @@ fi
 
 if [[ -z "${arg_workspace_id:-}" ]]; then
   if [[ -z "${arg_workspace_name:-}" ]]; then
-    tfc-helper-logger --level=error "${0##*/}: workspace name was not given"
-    exit 1
-# else
-#   arg_workspace_id="$(tfc-get-workspace --workspace-name="${arg_workspace_name}" | jq --raw-output '.data.id')"
+    :
+  else
+    arg_workspace_id="$(tfc-helper-cache-get --table="Workspaces" --id-glob='*' | \
+      jq --arg name "${arg_workspace_name}" --raw-output 'map(select(.attributes | fromjson | .name == $name))[].id' \
+    )"
   fi
-else
-  arg_workspace_name="$(tfc-get-workspace --workspace-id="${arg_workspace_id}" | jq --raw-output '.data.attributes.name')"
+  if [[ -z "${arg_workspace_id:-}" ]]; then
+    tfc-helper-logger --level=error "${0##*/}: workspace name id not given"
+    exit 1
+  fi
 fi
 
 # https://developer.hashicorp.com/terraform/cloud-docs/api-docs/state-versions#list-state-versions-for-a-workspace
-tfc-helper-httpclient --request-path="/state-versions" --data "filter[organization][name]=${arg_organization_name}" --data "filter[workspace][name]=${arg_workspace_name}" --get "${httpclient_args[@]}"
+tfc-helper-httpclient --request-path="/state-versions" --data "filter[organization][name]=${arg_organization_name}" --data "filter[workspace][name]=${arg_workspace_name}" --get "${httpclient_args[@]}" | \
+  tfc-helper-cache-set --table="StateVersions"

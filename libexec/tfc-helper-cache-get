@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+unset arg_id_glob
+unset arg_id_value
+unset arg_table
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    break
+    ;;
+  "--complete" )
+    exit 0
+    ;;
+  "--debug" )
+    set -x
+    ;;
+  "--help" )
+    exit 0
+    ;;
+  "--id-glob" | "--id-glob="* ) # option: TBD
+    if [[ "$1" == *"="* ]]; then
+      arg_id_glob="${1#*=}"
+    else
+      arg_id_glob="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--id-value" | "--id-value="* ) # option: TBD
+    if [[ "$1" == *"="* ]]; then
+      arg_id_value="${1#*=}"
+    else
+      arg_id_value="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--table" | "--table="* ) # option: table name
+    if [[ "$1" == *"="* ]]; then
+      arg_table="${1#*=}"
+    else
+      arg_table="${2:-}"
+      shift 1
+    fi
+    ;;
+  * )
+    tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"
+    exit 1
+    ;;
+  esac
+  shift 1
+done
+
+if [[ -z "${arg_id_glob:-}" ]] && [[ -z "${arg_id_value:-}" ]]; then
+  tfc-helper-logger --level=error "${0##*/}: missing required option: --id-glob or --id-value"
+  exit
+fi
+
+if [[ -z "${arg_table:-}" ]]; then
+  tfc-helper-logger --level=error "${0##*/}: missing required option: --table"
+  exit 1
+fi
+
+if [[ -z "${arg_id_glob:-}" ]]; then
+  sqlite3 "${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}" \
+    ".mode json" \
+    ".parameter set @TFCLI_CACHE_EXPIRY ${TFCLI_CACHE_EXPIRY:-8640000}" \
+    ".parameter set @arg_id_value ${arg_id_value:-}" \
+    ".timeout ${SQLITE_BUSY_TIMEOUT:-60000}" \
+    "SELECT
+      *
+    FROM
+      \"${arg_table}\"
+    WHERE
+      _DeletedAt < 0
+      AND _Id = @arg_id_value
+      AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');" 2>/dev/null || echo '[]'
+else
+  sqlite3 "${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}" \
+    ".mode json" \
+    ".parameter set @TFCLI_CACHE_EXPIRY ${TFCLI_CACHE_EXPIRY:-8640000}" \
+    ".parameter set @arg_id_glob ${arg_id_glob:-}" \
+    ".timeout ${SQLITE_BUSY_TIMEOUT:-60000}" \
+    "SELECT
+      *
+    FROM
+      \"${arg_table}\"
+    WHERE
+      _DeletedAt < 0
+      AND _Id GLOB @arg_id_glob
+      AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');" 2>/dev/null || echo '[]'
+fi

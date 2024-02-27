@@ -16,6 +16,8 @@ while [[ $# -gt 0 ]]; do
     ;;
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="VariableSets" --id-glob='*' | \
+      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
     exit 0
     ;;
   "--debug" )
@@ -53,20 +55,18 @@ done
 
 if [[ -z "${arg_varset_id:-}" ]]; then
   if [[ -z "${arg_varset_name:-}" ]]; then
+    :
+  else
+    arg_varset_id="$(tfc-helper-cache-get --table="VariableSets" --id-glob='*' | \
+      jq --arg name "${arg_varset_name}" --raw-output 'map(select(.attributes | fromjson | .name == $name))[].id' \
+    )"
+  fi
+  if [[ -z "${arg_varset_id:-}" ]]; then
     tfc-helper-logger --level=error "${0##*/}: variable set id was not given"
     exit 1
-  else
-    arg_varset_id="$(tfc-list-variable-sets | jq \
-      --arg arg_varset_name "${arg_varset_name}" \
-      --raw-output \
-      '.data | map(select(.attributes.name == $arg_varset_name)) | map(.id)[]' \
-    )"
-    if [[ -z "${arg_varset_id:-}" ]]; then
-      tfc-helper-logger --level=error "${0##*/}: unable to resolve variable set id: ${arg_varset_name:-}"
-      exit 1
-    fi
   fi
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/variable-sets#list-variables-in-a-variable-set
-tfc-helper-httpclient --request-path="/varsets/${arg_varset_id}/relationships/vars" "${httpclient_args[@]}"
+tfc-helper-httpclient --request-path="/varsets/${arg_varset_id}/relationships/vars" "${httpclient_args[@]}" | \
+  tfc-helper-cache-set --table="VariableSetVariables"

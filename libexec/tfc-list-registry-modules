@@ -14,6 +14,8 @@ while [[ $# -gt 0 ]]; do
     ;;
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="Organizations" --id-glob='*' | \
+      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
     exit 0
     ;;
   "--debug" )
@@ -44,4 +46,5 @@ if [[ -z "${arg_organization_name:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/private-registry/modules#list-registry-modules-for-an-organization
-tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/registry-modules" "${httpclient_args[@]}"
+tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/registry-modules" "${httpclient_args[@]}" | \
+  tfc-helper-cache-set --table="RegistryModules"

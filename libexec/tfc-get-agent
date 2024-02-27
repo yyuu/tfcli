@@ -15,6 +15,8 @@ while [[ $# -gt 0 ]]; do
     ;;
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="Agents" --id-glob='*' | \
+      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
     exit 0
     ;;
   "--debug" )
@@ -45,4 +47,5 @@ if [[ -z "${arg_agent_id:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/agents#show-an-agent
-tfc-helper-httpclient --request-path="/agents/${arg_agent_id}" "${httpclient_args[@]}" --no-paginate
+tfc-helper-httpclient --request-path="/agents/${arg_agent_id}" "${httpclient_args[@]}" --no-paginate | \
+  tfc-helper-cache-set --table="Agents"

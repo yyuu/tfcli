@@ -18,6 +18,10 @@ while [[ $# -gt 0 ]]; do
     ;;
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="Organizations" --id-glob='*' | \
+      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
+    tfc-helper-cache-get --table="RegistryProviders" --id-glob='*' | \
+      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
     exit 0
     ;;
   "--debug" )
@@ -87,4 +91,5 @@ if [[ -z "${arg_name:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/private-registry/providers#get-a-provider
-tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/registry-providers/${arg_registry_name}/${arg_namespace}/${arg_name}" "${httpclient_args[@]}" --no-paginate
+tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/registry-providers/${arg_registry_name}/${arg_namespace}/${arg_name}" "${httpclient_args[@]}" --no-paginate | \
+  tfc-helper-cache-set --table="RegistryProviders"

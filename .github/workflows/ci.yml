@@ -13,6 +13,9 @@ jobs:
       - name: Install bats
         run: |
           git clone --depth 1 https://github.com/bats-core/bats-core.git
+      - name: Install json2sqlite3
+        run: |
+          git clone --depth 1 https://github.com/yyuu/json2sqlite3.git
       - name: Run tests
         run: |
-          env PATH="${PWD}/bats-core/bin:${PATH}" make test
+          env PATH="${PWD}/bats-core/bin:${PWD}/json2sqlite3/bin:${PATH}" make test

@@ -16,6 +16,8 @@ while [[ $# -gt 0 ]]; do
     ;;
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="Users" --id-glob='*' | \
+      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .username // "")][]) | unique[]'
     exit 0
     ;;
   "--force" ) # option: refresh cache
@@ -50,13 +52,18 @@ done
 
 if [[ -z "${arg_user_id:-}" ]]; then
   if [[ -z "${arg_user_name:-}" ]]; then
-    tfc-helper-logger --level=error "${0##*/}: user id was not given"
-    exit 1
+    :
   else
-    tfc-helper-logger --level=error "${0##*/}: unable to resolve user id: ${arg_user_name:-}"
+    arg_user_id="$(tfc-helper-cache-get --table="Users" --id-glob='*' | \
+      jq --arg name "${arg_user_name}" --raw-output 'map(select(.attributes | fromjson | .username == $name))[].id' \
+    )"
+  fi
+  if [[ -z "${arg_user_id:-}" ]]; then
+    tfc-helper-logger --level=error "${0##*/}: user id was not given"
     exit 1
   fi
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/users#show-a-user
-tfc-helper-httpclient --request-path="/users/${arg_user_id}" "${httpclient_args[@]}" --no-paginate
+tfc-helper-httpclient --request-path="/users/${arg_user_id}" "${httpclient_args[@]}" --no-paginate | \
+  tfc-helper-cache-set --table="Users"
