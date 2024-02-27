@@ -84,6 +84,7 @@ data="$(mktemp "${TMPDIR}/data.XXXXXX")"
 
 if [[ -z "${arg_id_glob:-}" ]]; then
   sqlite3 "${TFCLI_DBFILE}" \
+    ".mode json" \
     ".parameter set @TFCLI_CACHE_EXPIRY ${TFCLI_CACHE_EXPIRY}" \
     ".parameter set @arg_id_value ${arg_id_value:-}" \
     ".timeout ${SQLITE_BUSY_TIMEOUT}" \
@@ -92,12 +93,12 @@ if [[ -z "${arg_id_glob:-}" ]]; then
     FROM
       \"${arg_table}\"
     WHERE
-      AND _DeletedAt < 0
+      _DeletedAt < 0
       AND _Id = @arg_id_value
-      AND datetime('now', (SELECT -(@cache_expiry)||' seconds')) < datetime(_UpdatedAt, 'unixepoch')
-    LIMIT 1;"
+      AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');"
 else
   sqlite3 "${TFCLI_DBFILE}" \
+    ".mode json" \
     ".parameter set @TFCLI_CACHE_EXPIRY ${TFCLI_CACHE_EXPIRY}" \
     ".parameter set @arg_id_glob ${arg_id_glob:-}" \
     ".timeout ${SQLITE_BUSY_TIMEOUT}" \
@@ -106,8 +107,7 @@ else
     FROM
       \"${arg_table}\"
     WHERE
-      AND _DeletedAt < 0
+      _DeletedAt < 0
       AND _Id GLOB @arg_id_glob
-      AND datetime('now', (SELECT -(@cache_expiry)||' seconds')) < datetime(_UpdatedAt, 'unixepoch')
-    LIMIT 1;"
+      AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');"
 fi
