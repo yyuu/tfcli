@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+unset arg_names
+
+arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
+httpclient_args=()
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    break
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="Organizations" --id-glob='*' | \
+      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
+    tfc-helper-cache-get --table="Users" --id-glob='*' | \
+      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .username // "")][]) | unique[]'
+    exit 0
+    ;;
+  "--debug" )
+    set -x
+    ;;
+  "--force" ) # option: refresh cache
+    :
+    ;;
+  "--help" ) # option: display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--organization-name" | "--organization-name="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_organization_name="${1#*=}"
+    else
+      arg_organization_name="${2:-}"
+      shift 1
+    fi
+    ;;
+  * )
+    httpclient_args+=("${1:-}")
+    ;;
+  esac
+  shift 1
+done
+
+if [[ -z "${arg_organization_name:-}" ]]; then
+  tfc-helper-logger --level=error "${0##*/}: organization name was not given"
+  exit 1
+fi
+
+# there is no server side API implementation for listing users.
+# doing client side logic for sake of convenience.
+mapfile -t user_ids < <(tfc-list-teams --organization-name="${arg_organization_name}" | \
+  jq --raw-output '.data | map(.relationships.users.data | map(.id)[]) | unique[]' \
+)
+
+{ for user_id in "${user_ids[@]}"; do
+    tfc-get-user --user-id="${user_id}"
+  done
+} | jq --slurp '{data: map(.data // {})}'
