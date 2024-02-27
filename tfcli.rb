@@ -10,6 +10,10 @@ class Tfcli < Formula
   depends_on "bats-core" => [:build, :test]
   depends_on "coreutils" => :recommended
   depends_on "jq"
+  depends_on "sqlite" => :recommended
+
+  # https://github.com/yyuu/json2sqlite3
+  depends_on "yyuu/json2sqlite3/json2sqlite3"
 
   def install
     if build.head?
