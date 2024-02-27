@@ -54,14 +54,6 @@ while [[ $# -gt 0 ]]; do
   shift 1
 done
 
-# TODO: move those _constants_ to somewhere common
-export TFCLI_DBFILE="${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}"
-mkdir -p "${TFCLI_DBFILE%/*}"
-
-export TFCLI_CACHE_EXPIRY="${TFCLI_CACHE_EXPIRY:-86400}" # 1 day
-
-export SQLITE_BUSY_TIMEOUT="${SQLITE_BUSY_TIMEOUT:-60000}"
-
 if [[ -z "${arg_id_glob:-}" ]] && [[ -z "${arg_id_value:-}" ]]; then
   tfc-helper-logger --level=error "${0##*/}: missing required option: --id-glob or --id-value"
   exit
@@ -73,11 +65,11 @@ if [[ -z "${arg_table:-}" ]]; then
 fi
 
 if [[ -z "${arg_id_glob:-}" ]]; then
-  sqlite3 "${TFCLI_DBFILE}" \
+  sqlite3 "${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}" \
     ".mode json" \
-    ".parameter set @TFCLI_CACHE_EXPIRY ${TFCLI_CACHE_EXPIRY}" \
+    ".parameter set @TFCLI_CACHE_EXPIRY ${TFCLI_CACHE_EXPIRY:-8640000}" \
     ".parameter set @arg_id_value ${arg_id_value:-}" \
-    ".timeout ${SQLITE_BUSY_TIMEOUT}" \
+    ".timeout ${SQLITE_BUSY_TIMEOUT:-60000}" \
     "SELECT
       *
     FROM
@@ -87,11 +79,11 @@ if [[ -z "${arg_id_glob:-}" ]]; then
       AND _Id = @arg_id_value
       AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');" 2>/dev/null || echo '[]'
 else
-  sqlite3 "${TFCLI_DBFILE}" \
+  sqlite3 "${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}" \
     ".mode json" \
-    ".parameter set @TFCLI_CACHE_EXPIRY ${TFCLI_CACHE_EXPIRY}" \
+    ".parameter set @TFCLI_CACHE_EXPIRY ${TFCLI_CACHE_EXPIRY:-8640000}" \
     ".parameter set @arg_id_glob ${arg_id_glob:-}" \
-    ".timeout ${SQLITE_BUSY_TIMEOUT}" \
+    ".timeout ${SQLITE_BUSY_TIMEOUT:-60000}" \
     "SELECT
       *
     FROM
