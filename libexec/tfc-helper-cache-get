@@ -89,13 +89,13 @@ if [[ -z "${arg_id_glob:-}" ]]; then
     ".parameter set @arg_id_value ${arg_id_value:-}" \
     ".timeout ${SQLITE_BUSY_TIMEOUT}" \
     "SELECT
-     *
+      *
     FROM
       \"${arg_table}\"
     WHERE
       _DeletedAt < 0
       AND _Id = @arg_id_value
-      AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');"
+      AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');" 2>/dev/null || echo '[]'
 else
   sqlite3 "${TFCLI_DBFILE}" \
     ".mode json" \
@@ -103,11 +103,11 @@ else
     ".parameter set @arg_id_glob ${arg_id_glob:-}" \
     ".timeout ${SQLITE_BUSY_TIMEOUT}" \
     "SELECT
-     *
+      *
     FROM
       \"${arg_table}\"
     WHERE
       _DeletedAt < 0
       AND _Id GLOB @arg_id_glob
-      AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');"
+      AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');" 2>/dev/null || echo '[]'
 fi

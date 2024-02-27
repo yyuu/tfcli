@@ -6,7 +6,6 @@ set -euo pipefail
 
 unset arg_workspace_id
 
-arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
 arg_workspace_name="${TF_WORKSPACE:-}"
 httpclient_args=()
 
@@ -17,6 +16,8 @@ while [[ $# -gt 0 ]]; do
     ;;
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="Workspaces" --id-glob='*' | \
+      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
     exit 0
     ;;
   "--debug" )
@@ -25,14 +26,6 @@ while [[ $# -gt 0 ]]; do
   "--help" ) # option: display help message
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
-    ;;
-  "--organization-name" | "--organization-name="* ) # option: TODO
-    if [[ "$1" == *"="* ]]; then
-      arg_organization_name="${1#*=}"
-    else
-      arg_organization_name="${2:-}"
-      shift 1
-    fi
     ;;
   "--workspace-id" | "--workspace-id="* ) # option: TODO
     if [[ "$1" == *"="* ]]; then
@@ -67,21 +60,16 @@ trap on_exit EXIT
 
 if [[ -z "${arg_workspace_id:-}" ]]; then
   if [[ -z "${arg_workspace_name:-}" ]]; then
+    :
+  else
+    arg_workspace_id="$(tfc-helper-cache-get --table="Workspaces" --id-glob='*' | \
+      jq --arg name "${arg_workspace_name}" --raw-output 'map(select(.attributes | fromjson | .name == $name))[].id' \
+    )"
+  fi
+  if [[ -z "${arg_workspace_id:-}" ]]; then
     tfc-helper-logger --level=error "${0##*/}: workspace id was not given"
     exit 1
-  else
-    arg_workspace_id="$(tfc-get-workspace --workspace-name="${arg_workspace_name}" | jq --raw-output '.data.id')"
   fi
-
-  if [[ -z "${arg_workspace_name:-}" ]]; then
-    tfc-helper-logger --level=error "${0##*/}: workspace name was not given"
-    exit 1
-  fi
-fi
-
-if [[ -z "${arg_organization_name:-}" ]]; then
-  tfc-helper-logger --level=error "${0##*/}: organization name was not given"
-  exit 1
 fi
 
 resp="$(mktemp "${TMPDIR}/resp.XXXXXXXX")"

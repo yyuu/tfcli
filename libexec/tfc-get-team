@@ -16,6 +16,8 @@ while [[ $# -gt 0 ]]; do
     ;;
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="Teams" --id-glob='*' | \
+      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
     exit 0
     ;;
   "--debug" )
@@ -53,18 +55,15 @@ done
 
 if [[ -z "${arg_team_id:-}" ]]; then
   if [[ -z "${arg_team_name:-}" ]]; then
+    :
+  else
+    arg_team_id="$(tfc-helper-cache-get --table="Teams" --id-glob='*' | \
+      jq --arg name "${arg_team_name}" --raw-output 'map(select(.attributes | fromjson | .name == $name))[].id' \
+    )"
+  fi
+  if [[ -z "${arg_team_id:-}" ]]; then
     tfc-helper-logger --level=error "${0##*/}: team id was not given"
     exit 1
-  else
-    arg_team_id="$(tfc-list-teams | jq \
-      --arg arg_team_name "${arg_team_name}" \
-      --raw-output \
-      '.data[] | select(.attributes.name == $arg_team_name) | .id' \
-    )"
-    if [[ -z "${arg_team_id:-}" ]]; then
-      tfc-helper-logger --level=error "${0##*/}: unable to resolve team id: ${arg_team_name:-}"
-      exit 1
-    fi
   fi
 fi
 
