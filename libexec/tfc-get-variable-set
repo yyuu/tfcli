@@ -69,4 +69,5 @@ if [[ -z "${arg_varset_id:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/variable-sets#show-variable-set
-tfc-helper-httpclient --request-path="/varsets/${arg_varset_id}" "${httpclient_args[@]}" --no-paginate
+tfc-helper-httpclient --request-path="/varsets/${arg_varset_id}" "${httpclient_args[@]}" --no-paginate | \
+  tfc-helper-cache-set --table="VariableSets"

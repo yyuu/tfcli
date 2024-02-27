@@ -44,4 +44,5 @@ if [[ -z "${arg_organization_name:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/private-registry/providers#list-terraform-registry-providers-for-an-organization
-tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/registry-providers" "${httpclient_args[@]}"
+tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/registry-providers" "${httpclient_args[@]}" | \
+  tfc-helper-cache-set --table="RegistryProviders"

@@ -77,4 +77,5 @@ if [[ -z "${arg_workspace_id:-}" ]]; then
   tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/varsets" "${httpclient_args[@]}"
 else
   tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}/varsets" "${httpclient_args[@]}"
-fi
+fi | \
+  tfc-helper-cache-set --table="VariableSets"

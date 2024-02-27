@@ -44,4 +44,5 @@ if [[ -z "${arg_organization_name:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/organizations#show-an-organization
-tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}" "${httpclient_args[@]}" --no-paginate
+tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}" "${httpclient_args[@]}" --no-paginate | \
+  tfc-helper-cache-set --table="Organizations"

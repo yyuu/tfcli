@@ -92,7 +92,7 @@ if jq '.' > "${data}"; then
         "${TFCLI_DBFILE}" "${arg_table}"
 
   # behave as write-through cache
-  cat "${data}"
+  jq '.' "${data}"
 else
   tfc-helper-logger --level=error "${0##*/}: invalid JSON"
   exit 1

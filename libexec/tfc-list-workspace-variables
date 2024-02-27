@@ -58,4 +58,5 @@ if [[ -z "${arg_workspace_id:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/workspace-variables#list-variables
-tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}/vars" "${httpclient_args[@]}"
+tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}/vars" "${httpclient_args[@]}" | \
+  tfc-helper-cache-set --table="WorkspaceVariables"

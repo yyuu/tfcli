@@ -47,4 +47,5 @@ if [[ -z "${arg_organization_name:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/workspaces#list-workspaces
-tfc-helper-httpclient --page-size=50 --request-path="/organizations/${arg_organization_name}/workspaces" "${httpclient_args[@]}"
+tfc-helper-httpclient --page-size=50 --request-path="/organizations/${arg_organization_name}/workspaces" "${httpclient_args[@]}" | \
+  tfc-helper-cache-set --table="Workspaces"

@@ -61,4 +61,5 @@ if [[ -z "${arg_organization_name:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/teams#list-teams
-tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/teams" "${httpclient_args[@]}"
+tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/teams" "${httpclient_args[@]}" | \
+  tfc-helper-cache-set --table="Teams"

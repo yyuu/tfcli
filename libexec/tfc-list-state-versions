@@ -77,4 +77,5 @@ else
 fi
 
 # https://developer.hashicorp.com/terraform/cloud-docs/api-docs/state-versions#list-state-versions-for-a-workspace
-tfc-helper-httpclient --request-path="/state-versions" --data "filter[organization][name]=${arg_organization_name}" --data "filter[workspace][name]=${arg_workspace_name}" --get "${httpclient_args[@]}"
+tfc-helper-httpclient --request-path="/state-versions" --data "filter[organization][name]=${arg_organization_name}" --data "filter[workspace][name]=${arg_workspace_name}" --get "${httpclient_args[@]}" | \
+  tfc-helper-cache-set --table="StateVersions"

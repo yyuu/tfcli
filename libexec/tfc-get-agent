@@ -45,4 +45,5 @@ if [[ -z "${arg_agent_id:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/agents#show-an-agent
-tfc-helper-httpclient --request-path="/agents/${arg_agent_id}" "${httpclient_args[@]}" --no-paginate
+tfc-helper-httpclient --request-path="/agents/${arg_agent_id}" "${httpclient_args[@]}" --no-paginate | \
+  tfc-helper-cache-set --table="Agents"

@@ -44,4 +44,5 @@ if [[ -z "${arg_organization_name:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/agents#list-agent-pools
-tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/agent-pools" "${httpclient_args[@]}"
+tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/agent-pools" "${httpclient_args[@]}" | \
+  tfc-helper-cache-set --table="AgentPools"
