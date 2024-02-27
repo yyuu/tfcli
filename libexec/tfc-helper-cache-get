@@ -72,16 +72,6 @@ if [[ -z "${arg_table:-}" ]]; then
   exit 1
 fi
 
-TMPDIR="$(mktemp -d)"
-
-on_exit() {
-  rm -rf "${TMPDIR}"
-}
-
-trap on_exit EXIT
-
-data="$(mktemp "${TMPDIR}/data.XXXXXX")"
-
 if [[ -z "${arg_id_glob:-}" ]]; then
   sqlite3 "${TFCLI_DBFILE}" \
     ".mode json" \
