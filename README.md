@@ -13,11 +13,12 @@ Command-line interface to interact with [Terraform Cloud](https://app.terraform.
     * `TF_WORKSPACE` (optional)
 1. (optional) Setup command line completion for your bash or zsh
 
-### Install via Homebrew
+### Install via Homebrew (recommended)
 
-You can also install via [Homebrew](https://brew.sh/) like follows.
+You can install via [Homebrew](https://brew.sh/) like follows.
 
 ```sh
+% brew tap yyuu/json2sqlite3 https://github.com/yyuu/json2sqlite3
 % brew tap yyuu/tfcli https://github.com/yyuu/tfcli
 % brew install yyuu/tfcli/tfcli
 ```
@@ -26,7 +27,7 @@ You can also install via [Homebrew](https://brew.sh/) like follows.
 
 1. Add `./bin` into your `$PATH`
 
-#### optional: command line completion
+### Setup command-line completion (optional)
 
 This tool supports command line completion for `bash` and `zsh`.
 Please add following configurations in your preferred shell configuration file.
