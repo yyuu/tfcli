@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: https://www.terraform.io/cloud-docs/api-docs/run#list-runs-in-a-workspace
 
 set -euo pipefail
 
@@ -17,7 +18,9 @@ while [[ $# -gt 0 ]]; do
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
     tfc-helper-cache-get --table="Workspaces" --id-glob='*' | \
-      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
+      jq --raw-output 'map("--workspace-id=\(.id)") | unique[]'
+    tfc-helper-cache-get --table="Workspaces" --id-glob='*' | \
+      jq --raw-output 'map("--workspace-name=\(.attributes | fromjson | .name)") | unique[]'
     exit 0
     ;;
   "--debug" )
@@ -47,7 +50,8 @@ while [[ $# -gt 0 ]]; do
     fi
     ;;
   * )
-    httpclient_args+=("${1:-}")
+    tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"
+    exit 1
     ;;
   esac
   shift 1

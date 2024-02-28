@@ -18,9 +18,9 @@ while [[ $# -gt 0 ]]; do
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
     tfc-helper-cache-get --table="Plans" --id-glob='*' | \
-      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
+      jq --raw-output 'map("--plan-id=\(.id)") | unique[]'
     tfc-helper-cache-get --table="Runs" --id-glob='*' | \
-      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
+      jq --raw-output 'map("--run-id=\(.id)") | unique[]'
     exit 0
     ;;
   "--debug" )
@@ -55,7 +55,8 @@ while [[ $# -gt 0 ]]; do
     fi
     ;;
   * )
-    httpclient_args+=("${1:-}")
+    tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"
+    exit 1
     ;;
   esac
   shift 1

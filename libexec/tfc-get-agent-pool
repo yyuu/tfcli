@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
+# summary: https://www.terraform.io/cloud-docs/api-docs/agents#show-an-agent-pool
 
 set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
 unset arg_agent_pool_id
+unset arg_agent_pool_name
 
 httpclient_args=()
 
@@ -16,7 +18,9 @@ while [[ $# -gt 0 ]]; do
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
     tfc-helper-cache-get --table="AgentPools" --id-glob='*' | \
-      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
+      jq --raw-output 'map("--agent-pool-id=\(.id)") | unique[]'
+    tfc-helper-cache-get --table="AgentPools" --id-glob='*' | \
+      jq --raw-output 'map("--agent-pool-name=\(.attributes | fromjson | .name)") | unique[]'
     exit 0
     ;;
   "--debug" )
@@ -26,7 +30,7 @@ while [[ $# -gt 0 ]]; do
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
     ;;
-  "--agent-pool-id" | "--agent-pool-id="* ) # option: TODO
+  "--agent-pool-id" | "--agent-pool-id="* | "--apool-id" | "--apool-id="* ) # option: TODO
     if [[ "$1" == *"="* ]]; then
       arg_agent_pool_id="${1#*=}"
     else
@@ -34,16 +38,34 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
+  "--agent-pool-name" | "--agent-pool-name="* | "--apool-name" | "--apool-name="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_agent_pool_name="${1#*=}"
+    else
+      arg_agent_pool_name="${2:-}"
+      shift 1
+    fi
+    ;;
   * )
-    httpclient_args+=("${1:-}")
+    tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"
+    exit 1
     ;;
   esac
   shift 1
 done
 
 if [[ -z "${arg_agent_pool_id:-}" ]]; then
-  tfc-helper-logger --level=error "${0##*/}: agent pool id was not given"
-  exit 1
+  if [[ -z "${arg_agent_pool_name:-}" ]]; then
+    :
+  else
+    arg_agent_pool_id="$(tfc-helper-cache-get --table="AgentPools" --id-glob='*' | \
+      jq --arg name "${arg_agent_pool_name}" --raw-output 'map(select(.attributes | fromjson | .name == $name))[].id' \
+    )"
+  fi
+  if [[ -z "${arg_agent_pool_id:-}" ]]; then
+    tfc-helper-logger --level=error "${0##*/}: agent pool id was not given"
+    exit 1
+  fi
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/agents#show-an-agent-pool

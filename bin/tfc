@@ -44,13 +44,21 @@ while [[ $# -gt 0 ]]; do
   "--" )
     break
     ;;
+  "--help" ) # option: display help message
+    if [[ -z "${arg_action:-}" ]]; then
+      arg_action="helper-help"
+      options+=("${BASH_SOURCE[0]}")
+    else
+      options+=("$1")
+    fi
+    ;;
   "commands" ) # option: list available commands
     arg_action="$1"
     ;;
   "completions" ) # option: internal interface for shell completion
     arg_action="$1"
     ;;
-  "help" | "--help" ) # option: display help message
+  "help" ) # option: display help message
     arg_action="helper-help"
     options+=("${BASH_SOURCE[0]}")
     ;;

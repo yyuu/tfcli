@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: https://developer.hashicorp.com/terraform/cloud-docs/api-docs/configuration-versions#show-a-configuration-version-s-commit-information
 
 set -euo pipefail
 
@@ -16,7 +17,7 @@ while [[ $# -gt 0 ]]; do
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
     tfc-helper-cache-get --table="ConfigurationVersions" --id-glob='*' | \
-      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
+      jq --raw-output 'map("--configuration-version-id=\(.id)") | unique[]'
     exit 0
     ;;
   "--debug" )
@@ -35,7 +36,8 @@ while [[ $# -gt 0 ]]; do
     fi
     ;;
   * )
-    httpclient_args+=("${1:-}")
+    tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"
+    exit 1
     ;;
   esac
   shift 1
@@ -46,4 +48,5 @@ if [[ -z "${arg_configuration_version_id:-}" ]]; then
   exit 1
 fi
 
+# https://developer.hashicorp.com/terraform/cloud-docs/api-docs/configuration-versions#show-a-configuration-version-s-commit-information
 tfc-helper-httpclient --request-path="/configuration-versions/${arg_configuration_version_id}/ingress-attributes" "${httpclient_args[@]}" --no-paginate

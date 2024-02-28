@@ -131,7 +131,7 @@ curl_args+=("--request" "${arg_request:-GET}")
 if [[ -n "${arg_retry:-}" ]]; then
   curl_args+=("--retry" "${arg_retry:-5}" "--retry-max-time" "60")
   if [[ ${curl_version_major:-0} -gt 7 ]] || { [[ ${curl_version_major:-0} -ge 7 ]] && [[ ${curl_version_minor:-0} -ge 52 ]]; }; then
-    # SRE-2221: skip using `--retry-connrefused` if curl was older than 7.52.0
+    # skip using `--retry-connrefused` if curl was older than 7.52.0
     curl_args+=("--retry-connrefused")
   fi
 else
@@ -139,7 +139,7 @@ else
     # retry by default for GETs
     curl_args+=("--retry" "${arg_retry:-5}" "--retry-max-time" "60")
     if [[ ${curl_version_major:-0} -gt 7 ]] || { [[ ${curl_version_major:-0} -ge 7 ]] && [[ ${curl_version_minor:-0} -ge 52 ]]; }; then
-      # SRE-2221: skip using `--retry-connrefused` if curl was older than 7.52.0
+      # skip using `--retry-connrefused` if curl was older than 7.52.0
       curl_args+=("--retry-connrefused")
     fi
   fi
