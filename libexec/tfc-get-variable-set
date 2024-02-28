@@ -23,14 +23,14 @@ while [[ $# -gt 0 ]]; do
       jq --raw-output 'map("--varset-name=\(.attributes | fromjson | .name)") | unique[]'
     exit 0
     ;;
-  "--debug" )
+  "--debug" ) # option: Enable debug output
     set -x
     ;;
-  "--help" ) # option: display help message
+  "--help" ) # option: Display help message
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
     ;;
-  "--varset-id" | "--varset-id="* ) # option: TODO
+  "--varset-id" | "--varset-id="* ) # option: Variable Set ID
     if [[ "$1" == *"="* ]]; then
       arg_varset_id="${1#*=}"
     else
@@ -38,7 +38,7 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
-  "--varset-name" | "--varset-name="* ) # option: TODO
+  "--varset-name" | "--varset-name="* ) # option: Variable Set name
     if [[ "$1" == *"="* ]]; then
       arg_varset_name="${1#*=}"
     else

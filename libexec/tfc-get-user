@@ -23,11 +23,14 @@ while [[ $# -gt 0 ]]; do
       jq --raw-output 'map("--user-name=\(.attributes | fromjson | .username)") | unique[]'
     exit 0
     ;;
-  "--help" ) # option: display help message
+  "--debug" ) # option: Enable debug output
+    set -x
+    ;;
+  "--help" ) # option: Display help message
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
     ;;
-  "--user-id" | "--user-id="* ) # option: TODO
+  "--user-id" | "--user-id="* ) # option: User ID
     if [[ "$1" == *"="* ]]; then
       arg_user_id="${1#*=}"
     else
@@ -35,7 +38,7 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
-  "--user-name" | "--user-name="* ) # option: TODO
+  "--user-name" | "--user-name="* ) # option: User name
     if [[ "$1" == *"="* ]]; then
       arg_user_name="${1#*=}"
     else

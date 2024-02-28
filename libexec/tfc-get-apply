@@ -20,14 +20,14 @@ while [[ $# -gt 0 ]]; do
       jq --raw-output 'map("--apply-id=\(.id)") | unique[]'
     exit 0
     ;;
-  "--debug" )
+  "--debug" ) # option: Enable debug output
     set -x
     ;;
-  "--help" ) # option: display help message
+  "--help" ) # option: Display help message
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
     ;;
-  "--apply-id" | "--apply-id="* ) # option: TODO
+  "--apply-id" | "--apply-id="* ) # option: Apply ID
     if [[ "$1" == *"="* ]]; then
       arg_apply_id="${1#*=}"
     else

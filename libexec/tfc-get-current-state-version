@@ -25,14 +25,14 @@ while [[ $# -gt 0 ]]; do
 #     jq --raw-output 'map([.id, (.attributes | fromjson | .name)][]) | unique[]'
     exit 0
     ;;
-  "--debug" )
+  "--debug" ) # option: Enable debug output
     set -x
     ;;
-  "--help" ) # option: display help message
+  "--help" ) # option: Display help message
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
     ;;
-  "--workspace-id" | "--workspace-id="* ) # option: TODO
+  "--workspace-id" | "--workspace-id="* ) # option: Workspace ID
     if [[ "$1" == *"="* ]]; then
       arg_workspace_id="${1#*=}"
     else
@@ -40,7 +40,7 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
-  "--workspace-name" | "--workspace-name="* ) # option: TODO
+  "--workspace-name" | "--workspace-name="* ) # option: Workspace name
     if [[ "$1" == *"="* ]]; then
       arg_workspace_name="${1#*=}"
     else
