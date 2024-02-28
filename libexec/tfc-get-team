@@ -23,17 +23,14 @@ while [[ $# -gt 0 ]]; do
       jq --raw-output 'map("--team-name=\(.attributes | fromjson | .name)") | unique[]'
     exit 0
     ;;
-  "--debug" )
+  "--debug" ) # option: Enable debug output
     set -x
     ;;
-  "--force" ) # option: refresh cache
-    :
-    ;;
-  "--help" ) # option: display help message
+  "--help" ) # option: Display help message
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
     ;;
-  "--team-id" | "--team-id="* ) # option: TODO
+  "--team-id" | "--team-id="* ) # option: Team ID
     if [[ "$1" == *"="* ]]; then
       arg_team_id="${1#*=}"
     else
@@ -41,7 +38,7 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
-  "--team-name" | "--team-name="* ) # option: TODO
+  "--team-name" | "--team-name="* ) # option: Team name
     if [[ "$1" == *"="* ]]; then
       arg_team_name="${1#*=}"
     else
@@ -61,9 +58,7 @@ if [[ -z "${arg_team_id:-}" ]]; then
   if [[ -z "${arg_team_name:-}" ]]; then
     :
   else
-    arg_team_id="$(tfc-helper-cache-get --table="Teams" --id-glob='*' | \
-      jq --arg name "${arg_team_name}" --raw-output 'map(select(.attributes | fromjson | .name == $name))[].id' \
-    )"
+    arg_team_id="$(tfc-list-teams | jq --arg name "${arg_team_name}" --raw-output '.data | map(select(.attributes.name == $name))[].id')"
   fi
   if [[ -z "${arg_team_id:-}" ]]; then
     tfc-helper-logger --level=error "${0##*/}: team id was not given"
@@ -73,4 +68,4 @@ fi
 
 # https://www.terraform.io/cloud-docs/api-docs/teams#show-team-information
 tfc-helper-httpclient --request-path="/teams/${arg_team_id}" "${httpclient_args[@]}" --no-paginate | \
-  tfc-helper-cache-set --table="Teams"
+  tfc-helper-cache-set --partial --table="Teams"

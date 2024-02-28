@@ -15,13 +15,13 @@ while [[ $# -gt 0 ]]; do
   "--complete" )
     exit 0
     ;;
-  "--debug" )
+  "--debug" ) # option: Enable debug output
     set -x
     ;;
-  "--help" )
+  "--help" ) # option: Display help message
     exit 0
     ;;
-  "--level" | "--level="* ) # option: log level
+  "--level" | "--level="* ) # option: Specify log level (info/warn/error/debug)
     if [[ "$1" == *"="* ]]; then
       arg_level="${1#*=}"
     else

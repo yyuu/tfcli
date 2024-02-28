@@ -23,14 +23,14 @@ while [[ $# -gt 0 ]]; do
       jq --raw-output 'map("--run-id=\(.id)") | unique[]'
     exit 0
     ;;
-  "--debug" )
+  "--debug" ) # option: Enable debug output
     set -x
     ;;
-  "--help" ) # option: display help message
+  "--help" ) # option: Display help message
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
     ;;
-  "--output" | "--output="* ) # option: TODO
+  "--output" | "--output="* ) # option: Specify output format (diff/json/text)
     if [[ "$1" == *"="* ]]; then
       arg_output="${1#*=}"
     else
@@ -38,7 +38,7 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
-  "--plan-id" | "--plan-id="* ) # option: TODO
+  "--plan-id" | "--plan-id="* ) # option: Plan ID
     if [[ "$1" == *"="* ]]; then
       arg_plan_id="${1#*=}"
     else
@@ -46,7 +46,7 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
-  "--run-id" | "--run-id="* ) # option: TODO
+  "--run-id" | "--run-id="* ) # option: Run ID
     if [[ "$1" == *"="* ]]; then
       arg_run_id="${1#*=}"
     else

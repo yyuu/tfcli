@@ -28,17 +28,14 @@ while [[ $# -gt 0 ]]; do
       jq --raw-output 'map("--workspace-name=\(.attributes | fromjson | .name)") | unique[]'
     exit 0
     ;;
-  "--debug" )
+  "--debug" ) # option: Enable debug output
     set -x
     ;;
-  "--force" ) # option: refresh cache
-    :
-    ;;
-  "--help" ) # option: display help message
+  "--help" ) # option: Display help message
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
     ;;
-  "--organization-name" | "--organization-name="* ) # option: TODO
+  "--organization-name" | "--organization-name="* ) # option: Organization name
     if [[ "$1" == *"="* ]]; then
       arg_organization_name="${1#*=}"
     else
@@ -46,7 +43,7 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
-  "--workspace-id" | "--workspace-id="* ) # option: TODO
+  "--workspace-id" | "--workspace-id="* ) # option: Workspace ID
     if [[ "$1" == *"="* ]]; then
       arg_workspace_id="${1#*=}"
     else
@@ -54,7 +51,7 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
-  "--workspace-name" | "--workspace-name="* ) # option: TODO
+  "--workspace-name" | "--workspace-name="* ) # option: Workspace name
     if [[ "$1" == *"="* ]]; then
       arg_workspace_name="${1#*=}"
     else
@@ -81,9 +78,10 @@ if [[ -z "${arg_workspace_id:-}" ]]; then
     exit 1
   fi
 
-  tfc-helper-httpclient --request-path="/organizations/${arg_organization_name:-}/workspaces/${arg_workspace_name:-}" "${httpclient_args[@]}" --no-paginate
+  tfc-helper-httpclient --request-path="/organizations/${arg_organization_name:-}/workspaces/${arg_workspace_name:-}" "${httpclient_args[@]}" --no-paginate | \
+    tfc-helper-cache-set --partial --table="Workspaces"
 else
   # https://www.terraform.io/cloud-docs/api-docs/workspaces#show-workspace
-  tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}" "${httpclient_args[@]}" --no-paginate
-fi | \
-  tfc-helper-cache-set --table="Workspaces"
+  tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}" "${httpclient_args[@]}" --no-paginate | \
+    tfc-helper-cache-set --partial --table="Workspaces"
+fi

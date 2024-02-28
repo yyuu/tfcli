@@ -148,6 +148,9 @@ EOS
   for libexec in "${LIBEXEC_DIR}/"*; do
     name="${libexec##*/}"
     case "${name:-}" in
+    "tfc-helper-"* )
+      : # not showing helper commands as they are internal interface
+      ;;
     "tfc-"* )
       echo "${name##tfc-}"
       ;;

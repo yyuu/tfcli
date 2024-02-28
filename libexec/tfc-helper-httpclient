@@ -20,14 +20,14 @@ while [[ $# -gt 0 ]]; do
   "--" )
     break
     ;;
-  "--debug" )
+  "--debug" ) # option: Enable debug output
     set -x
     ;;
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
     exit 0
     ;;
-  "--help" ) # option: display help message
+  "--help" ) # option: Display help message
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
     ;;
@@ -39,7 +39,7 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
-  "--output" | "--output="* ) # option: TODO
+  "--output" | "--output="* ) # option: Specify output format (json/text)
     if [[ "$1" == *"="* ]]; then
       arg_output="${1#*=}"
     else
@@ -63,7 +63,7 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
-  "--paginate" | "--no-paginate" ) # option: enable or disable automatic pagination
+  "--paginate" | "--no-paginate" ) # option: Enable or disable automatic pagination. By default it performs auto pagination.
     if [[ "$1" == "--no-"* ]]; then
       arg_paginate=
     else
@@ -197,7 +197,7 @@ else
       echo -n "." 1>&2
       resp="$(mktemp "${TMPDIR}/resp.XXXXXXXX")"
       curl "${curl_args[@]}" "${next_page}" > "${resp}"
-      data_length="$(jq --raw-output 'if .data then .data else [] end | length' < "${resp}")"
+      data_length="$(jq --raw-output '.data // [] | length' < "${resp}")"
       total_items="$(( total_items + data_length ))"
       resps+=("${resp}")
       next_page="$(jq --raw-output '.links.next' < "${resp}")"
@@ -213,7 +213,7 @@ else
     if [[ ${#resps[*]} -eq 1 ]]; then
       jq '.' "${resps[@]}"
     else
-      jq '.data[]' "${resps[@]}" | jq --slurp '{data: ., links: {}, meta: {}}'
+      jq --slurp '{data: map(.data // [] | .[]), links: (.[-1].links // {}), meta: (.[-1].meta // {})}' "${resps[@]}"
     fi
   fi
 fi

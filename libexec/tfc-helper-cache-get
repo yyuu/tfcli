@@ -16,10 +16,10 @@ while [[ $# -gt 0 ]]; do
   "--complete" )
     exit 0
     ;;
-  "--debug" )
+  "--debug" ) # option: Enable debug output
     set -x
     ;;
-  "--help" )
+  "--help" ) # option: Display help message
     exit 0
     ;;
   "--id-glob" | "--id-glob="* ) # option: TBD
@@ -38,7 +38,7 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
-  "--table" | "--table="* ) # option: table name
+  "--table" | "--table="* ) # option: SQLite3 table name used for caching
     if [[ "$1" == *"="* ]]; then
       arg_table="${1#*=}"
     else
@@ -64,6 +64,15 @@ if [[ -z "${arg_table:-}" ]]; then
   exit 1
 fi
 
+TMPDIR="$(mktemp -d)"
+
+on_exit() {
+  rm -rf "${TMPDIR}"
+}
+
+trap on_exit EXIT
+
+data="$(mktemp "${TMPDIR}/data.XXXXXX")"
 if [[ -z "${arg_id_glob:-}" ]]; then
   sqlite3 "${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}" \
     ".mode json" \
@@ -77,7 +86,7 @@ if [[ -z "${arg_id_glob:-}" ]]; then
     WHERE
       _DeletedAt < 0
       AND _Id = @arg_id_value
-      AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');" 2>/dev/null || echo '[]'
+      AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');" 1>"${data}" 2>/dev/null || true
 else
   sqlite3 "${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}" \
     ".mode json" \
@@ -91,5 +100,11 @@ else
     WHERE
       _DeletedAt < 0
       AND _Id GLOB @arg_id_glob
-      AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');" 2>/dev/null || echo '[]'
+      AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');" 1>"${data}" 2>/dev/null || true
+fi
+
+if [[ -s "${data}" ]]; then
+  jq '.' < "${data}"
+else
+  jq --null-input '[]'
 fi
