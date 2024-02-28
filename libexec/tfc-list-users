@@ -56,6 +56,16 @@ mapfile -t user_ids < <(tfc-list-teams --organization-name="${arg_organization_n
 )
 
 { for user_id in "${user_ids[@]}"; do
-    tfc-get-user --user-id="${user_id}"
+    resp="$(tfc-helper-cache-get --table="Users" --id-value="${user_id}" | jq 'map({
+      id: .id,
+      type: .type,
+      attributes: (.attributes // "{}" | fromjson),
+      relationships: (.relationships // "{}" | fromjson),
+      links: (.links // "{}" | fromjson)
+    })[]')"
+    if [[ -z "${resp:-}" ]]; then
+      resp="$(tfc-get-user --user-id="${user_id}" | jq '.data')"
+    fi
+    jq '.' <<< "${resp:-}"
   done
-} | jq --slurp '{data: map(.data // {})}'
+} | jq --slurp '{data: ., links: {}, meta: {}}'
