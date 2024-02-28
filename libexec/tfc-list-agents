@@ -17,7 +17,9 @@ while [[ $# -gt 0 ]]; do
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
     tfc-helper-cache-get --table="AgentPools" --id-glob='*' | \
-      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
+      jq --raw-output 'map("--agent-pool-id=\(.id)") | unique[]'
+    tfc-helper-cache-get --table="AgentPools" --id-glob='*' | \
+      jq --raw-output 'map("--agent-pool-name=\(.attributes | fromjson | .name)") | unique[]'
     exit 0
     ;;
   "--debug" )
@@ -27,7 +29,7 @@ while [[ $# -gt 0 ]]; do
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
     ;;
-  "--agent-pool-id" | "--agent-pool-id="* ) # option: TODO
+  "--agent-pool-id" | "--agent-pool-id="* | "--apool-id" | "--apool-id="* ) # option: TODO
     if [[ "$1" == *"="* ]]; then
       arg_agent_pool_id="${1#*=}"
     else
@@ -35,7 +37,7 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
-  "--agent-pool-name" | "--agent-pool-name="* ) # option: TODO
+  "--agent-pool-name" | "--agent-pool-name="* | "--apool-name" | "--apool-name="* ) # option: TODO
     if [[ "$1" == *"="* ]]; then
       arg_agent_pool_name="${1#*=}"
     else

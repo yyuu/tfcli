@@ -17,15 +17,19 @@ while [[ $# -gt 0 ]]; do
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
     tfc-helper-cache-get --table="Workspaces" --id-glob='*' | \
-      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .name // "")][]) | unique[]'
-    exit 0
-    ;;
-  "--help" ) # option: display help message
-    tfc-helper-help "${BASH_SOURCE##*/}"
+      jq --raw-output 'map("--workspace-id=\(.id)") | unique[]'
+    tfc-helper-cache-get --table="Workspaces" --id-glob='*' | \
+      jq --raw-output 'map("--workspace-name=\(.attributes | fromjson | .name)") | unique[]'
+#   tfc-helper-cache-get --table="Workspaces" --id-glob='*' | \
+#     jq --raw-output 'map([.id, (.attributes | fromjson | .name)][]) | unique[]'
     exit 0
     ;;
   "--debug" )
     set -x
+    ;;
+  "--help" ) # option: display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
     ;;
   "--workspace-id" | "--workspace-id="* ) # option: TODO
     if [[ "$1" == *"="* ]]; then

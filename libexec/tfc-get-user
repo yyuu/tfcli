@@ -17,7 +17,9 @@ while [[ $# -gt 0 ]]; do
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
     tfc-helper-cache-get --table="Users" --id-glob='*' | \
-      jq --raw-output 'map([.id // "", (.attributes // {} | fromjson | .username // "")][]) | unique[]'
+      jq --raw-output 'map("--user-id=\(.id)") | unique[]'
+    tfc-helper-cache-get --table="Users" --id-glob='*' | \
+      jq --raw-output 'map("--user-name=\(.attributes | fromjson | .username)") | unique[]'
     exit 0
     ;;
   "--force" ) # option: refresh cache
