@@ -23,9 +23,6 @@ while [[ $# -gt 0 ]]; do
       jq --raw-output 'map("--user-name=\(.attributes | fromjson | .username)") | unique[]'
     exit 0
     ;;
-  "--force" ) # option: refresh cache
-    :
-    ;;
   "--help" ) # option: display help message
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0

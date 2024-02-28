@@ -26,9 +26,6 @@ while [[ $# -gt 0 ]]; do
   "--debug" )
     set -x
     ;;
-  "--force" ) # option: refresh cache
-    :
-    ;;
   "--help" ) # option: display help message
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
