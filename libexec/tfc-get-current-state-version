@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: https://developer.hashicorp.com/terraform/cloud-docs/api-docs/state-versions#fetch-the-current-state-version-for-a-workspace
 
 set -euo pipefail
 
@@ -77,6 +78,7 @@ if [[ -z "${arg_workspace_id:-}" ]]; then
   fi
 fi
 
+# https://developer.hashicorp.com/terraform/cloud-docs/api-docs/state-versions#fetch-the-current-state-version-for-a-workspace
 resp="$(mktemp "${TMPDIR}/resp.XXXXXXXX")"
 if tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}/current-state-version" "${httpclient_args[@]}" --no-paginate > "${resp}"; then
   :

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: https://developer.hashicorp.com/terraform/cloud-docs/api-docs/configuration-versions#list-configuration-versions
 
 set -euo pipefail
 
@@ -67,5 +68,6 @@ if [[ -z "${arg_workspace_id:-}" ]]; then
   fi
 fi
 
+# https://developer.hashicorp.com/terraform/cloud-docs/api-docs/configuration-versions#list-configuration-versions
 tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}/configuration-versions" "${httpclient_args[@]}" | \
   tfc-helper-cache-set --table="ConfigurationVersions"

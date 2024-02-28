@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: https://www.terraform.io/cloud-docs/api-docs/private-registry/modules#get-a-module
 
 set -euo pipefail
 

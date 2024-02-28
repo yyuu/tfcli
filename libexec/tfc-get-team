@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: https://www.terraform.io/cloud-docs/api-docs/teams#show-team-information
 
 set -euo pipefail
 

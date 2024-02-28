@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: https://developer.hashicorp.com/terraform/cloud-docs/api-docs/configuration-versions#show-a-configuration-version
 
 set -euo pipefail
 
@@ -47,4 +48,5 @@ if [[ -z "${arg_configuration_version_id:-}" ]]; then
   exit 1
 fi
 
+# https://developer.hashicorp.com/terraform/cloud-docs/api-docs/configuration-versions#show-a-configuration-version
 tfc-helper-httpclient --request-path="/configuration-versions/${arg_configuration_version_id}" "${httpclient_args[@]}" --no-paginate

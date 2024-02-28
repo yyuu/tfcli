@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# summary: https://developer.hashicorp.com/terraform/cloud-docs/api-docs/state-versions#list-state-versions-for-a-workspace
 
 set -euo pipefail
 
