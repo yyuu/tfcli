@@ -86,9 +86,9 @@ if jq '.' > "${raw_data}"; then
     })' < "${raw_data}" > "${data}"
   json2sqlite3_opts=()
   if [[ -z "${arg_partial:-}" ]]; then
-    json2sqlite3_opts+=("--no-soft-delete")
-  else
     json2sqlite3_opts+=("--soft-delete")
+  else
+    json2sqlite3_opts+=("--no-soft-delete")
   fi
   json2sqlite3 \
     --primary-key-column="_Id:TEXT" \
