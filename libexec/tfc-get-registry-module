@@ -73,7 +73,8 @@ while [[ $# -gt 0 ]]; do
     fi
     ;;
   * )
-    httpclient_args+=("${1:-}")
+    tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"
+    exit 1
     ;;
   esac
   shift 1
