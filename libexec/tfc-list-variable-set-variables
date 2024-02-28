@@ -70,4 +70,4 @@ fi
 
 # https://www.terraform.io/cloud-docs/api-docs/variable-sets#list-variables-in-a-variable-set
 tfc-helper-httpclient --request-path="/varsets/${arg_varset_id}/relationships/vars" "${httpclient_args[@]}" | \
-  tfc-helper-cache-set --table="VariableSetVariables"
+  tfc-helper-cache-set --partial --table="VariableSetVariables"

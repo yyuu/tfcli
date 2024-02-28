@@ -70,4 +70,4 @@ fi
 
 # https://www.terraform.io/cloud-docs/api-docs/teams#show-team-information
 tfc-helper-httpclient --request-path="/teams/${arg_team_id}" "${httpclient_args[@]}" --no-paginate | \
-  tfc-helper-cache-set --table="Teams"
+  tfc-helper-cache-set --partial --table="Teams"

@@ -70,4 +70,4 @@ fi
 
 # https://www.terraform.io/cloud-docs/api-docs/users#show-a-user
 tfc-helper-httpclient --request-path="/users/${arg_user_id}" "${httpclient_args[@]}" --no-paginate | \
-  tfc-helper-cache-set --table="Users"
+  tfc-helper-cache-set --partial --table="Users"

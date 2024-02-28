@@ -70,4 +70,4 @@ fi
 
 # https://www.terraform.io/cloud-docs/api-docs/run#list-runs-in-a-workspace
 tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}/runs" "${httpclient_args[@]}" | \
-  tfc-helper-cache-set --table="Runs"
+  tfc-helper-cache-set --partial --table="Runs"

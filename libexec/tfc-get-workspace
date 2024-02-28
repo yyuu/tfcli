@@ -83,4 +83,4 @@ else
   # https://www.terraform.io/cloud-docs/api-docs/workspaces#show-workspace
   tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}" "${httpclient_args[@]}" --no-paginate
 fi | \
-  tfc-helper-cache-set --table="Workspaces"
+  tfc-helper-cache-set --partial --table="Workspaces"

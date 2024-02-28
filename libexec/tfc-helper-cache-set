@@ -4,6 +4,7 @@ set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
+unset arg_partial
 unset arg_table
 
 arg_id_key="id"
@@ -28,6 +29,13 @@ while [[ $# -gt 0 ]]; do
     else
       arg_id_key="${2:-}"
       shift 1
+    fi
+    ;;
+  "--partial" | "--no-partial" ) # option: specify if cache is partial content or not
+    if [[ "$1" == "--no-"* ]]; then
+      arg_partial=
+    else
+      arg_partial=1
     fi
     ;;
   "--table" | "--table="* ) # option: table name
@@ -59,9 +67,10 @@ on_exit() {
 
 trap on_exit EXIT
 
-data="$(mktemp "${TMPDIR}/data.XXXXXX")"
+raw_data="$(mktemp "${TMPDIR}/raw_data.XXXXXX")"
 
-if jq '.' > "${data}"; then
+if jq '.' > "${raw_data}"; then
+  data="$(mktemp "${TMPDIR}/data.XXXXXX")"
   jq --arg PROGRAM_NAME "${0##*/}" --arg id_key "${arg_id_key}" \
     'if (.data | type) == "array" then
       .data
@@ -74,17 +83,25 @@ if jq '.' > "${data}"; then
       _CreatedAt: now,
       _UpdatedAt: now,
       _DeletedAt: -1
-    })' < "${data}" | \
-      json2sqlite3 \
-        --primary-key-column="_Id:TEXT" \
-        --created-column="_CreatedAt:NUMERIC" \
-        --updated-column="_UpdatedAt:NUMERIC" \
-        --deleted-column="_DeletedAt:NUMERIC" \
-        --preserve-created \
-        "${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}" "${arg_table}"
+    })' < "${raw_data}" > "${data}"
+  json2sqlite3_opts=()
+  if [[ -z "${arg_partial:-}" ]]; then
+    json2sqlite3_opts+=("--no-soft-delete")
+  else
+    json2sqlite3_opts+=("--soft-delete")
+  fi
+  json2sqlite3 \
+    --primary-key-column="_Id:TEXT" \
+    --created-column="_CreatedAt:NUMERIC" \
+    --updated-column="_UpdatedAt:NUMERIC" \
+    --deleted-column="_DeletedAt:NUMERIC" \
+    --preserve-created \
+    "${json2sqlite3_opts[@]}" \
+    "${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}" \
+    "${arg_table}" < "${data}" > /dev/null
 
   # behave as write-through cache
-  jq '.' "${data}"
+  jq '.' "${raw_data}"
 else
   tfc-helper-logger --level=error "${0##*/}: invalid JSON"
   exit 1
