@@ -5,12 +5,8 @@ Command-line interface to interact with [Terraform Cloud](https://app.terraform.
 ## Setup
 
 1. Go to https://app.terraform.io/app/settings/tokens, and issue a Terraform Cloud User token
-1. Setup environment variables to specify your Terraform Cloud settings (naming conventions are based on https://www.terraform.io/cli/cloud/settings#environment-variables)
-    * `TF_CLOUD_TOKEN`
-    * `TF_CLOUD_ORGANIZATION` (optional)
-    * `TF_CLOUD_HOSTNAME` (optional)
-    * `TF_CLOUD_PROJECT` (optional)
-    * `TF_WORKSPACE` (optional)
+    * Then, store the token in the environment variable or `TF_CLOUD_TOKEN`
+1. Set Terraform Cloud organization name in the environment variable of `TF_CLOUD_ORGANIZATION`
 1. (optional) Setup command line completion for your bash or zsh
 
 ### Install via Homebrew (recommended)
@@ -38,6 +34,4 @@ if command -v tfc 1>/dev/null 2>&1; then
 fi
 ```
 
-## Examples
-
-TBD
+Once you have invoked `tfc list-*` commands, they will store API responses in `~/.cache/tfcli/tfcli.sqlite` then use for completion.
