@@ -213,7 +213,7 @@ else
     if [[ ${#resps[*]} -eq 1 ]]; then
       jq '.' "${resps[@]}"
     else
-      jq '.data[]' "${resps[@]}" | jq --slurp '{data: ., links: {}, meta: {}}'
+      jq --slurp '{data: map(.data[]), links: {}, meta: {}}' "${resps[@]}"
     fi
   fi
 fi
