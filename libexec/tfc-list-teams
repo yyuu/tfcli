@@ -5,8 +5,6 @@ set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
-unset arg_names
-
 arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
 httpclient_args=()
 
@@ -34,14 +32,6 @@ while [[ $# -gt 0 ]]; do
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
     ;;
-  "--names" | "--names="* ) # option: if specified, restricts results to a team with a matching name. If multiple comma separated values are specified, teams matching any of the names are returned.
-    if [[ "$1" == *"="* ]]; then
-      arg_names="${1#*=}"
-    else
-      arg_names="${2:-}"
-      shift 1
-    fi
-    ;;
   "--organization-name" | "--organization-name="* ) # option: Organization name
     if [[ "$1" == *"="* ]]; then
       arg_organization_name="${1#*=}"
@@ -57,10 +47,6 @@ while [[ $# -gt 0 ]]; do
   esac
   shift 1
 done
-
-if [[ -n "${arg_names:-}" ]]; then
-  httpclient_args+=("--get" "--data" "filter[names]=${arg_names}")
-fi
 
 if [[ -z "${arg_organization_name:-}" ]]; then
   tfc-helper-logger --level=error "${0##*/}: organization name was not given"

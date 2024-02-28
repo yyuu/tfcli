@@ -39,7 +39,7 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
-  "--output" | "--output="* ) # option: output format (json/text)
+  "--output" | "--output="* ) # option: Specify output format (json/text)
     if [[ "$1" == *"="* ]]; then
       arg_output="${1#*=}"
     else
@@ -63,7 +63,7 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
-  "--paginate" | "--no-paginate" ) # option: enable or disable automatic pagination
+  "--paginate" | "--no-paginate" ) # option: Enable or disable automatic pagination. By default it performs auto pagination.
     if [[ "$1" == "--no-"* ]]; then
       arg_paginate=
     else
