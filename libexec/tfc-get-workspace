@@ -78,9 +78,10 @@ if [[ -z "${arg_workspace_id:-}" ]]; then
     exit 1
   fi
 
-  tfc-helper-httpclient --request-path="/organizations/${arg_organization_name:-}/workspaces/${arg_workspace_name:-}" "${httpclient_args[@]}" --no-paginate
+  tfc-helper-httpclient --request-path="/organizations/${arg_organization_name:-}/workspaces/${arg_workspace_name:-}" "${httpclient_args[@]}" --no-paginate | \
+    tfc-helper-cache-set --partial --table="Workspaces"
 else
   # https://www.terraform.io/cloud-docs/api-docs/workspaces#show-workspace
-  tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}" "${httpclient_args[@]}" --no-paginate
-fi | \
-  tfc-helper-cache-set --partial --table="Workspaces"
+  tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}" "${httpclient_args[@]}" --no-paginate | \
+    tfc-helper-cache-set --partial --table="Workspaces"
+fi

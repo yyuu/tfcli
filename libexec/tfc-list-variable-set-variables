@@ -58,9 +58,7 @@ if [[ -z "${arg_varset_id:-}" ]]; then
   if [[ -z "${arg_varset_name:-}" ]]; then
     :
   else
-    arg_varset_id="$(tfc-helper-cache-get --table="VariableSets" --id-glob='*' | \
-      jq --arg name "${arg_varset_name}" --raw-output 'map(select(.attributes | fromjson | .name == $name))[].id' \
-    )"
+    arg_varset_id="$(tfc-list-variable-sets | jq --arg name "${arg_varset_name}" --raw-output '.data | map(select(.attributes.name == $name))[].id')"
   fi
   if [[ -z "${arg_varset_id:-}" ]]; then
     tfc-helper-logger --level=error "${0##*/}: variable set id was not given"

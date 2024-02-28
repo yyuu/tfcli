@@ -58,9 +58,7 @@ if [[ -z "${arg_agent_pool_id:-}" ]]; then
   if [[ -z "${arg_agent_pool_name:-}" ]]; then
     :
   else
-    arg_agent_pool_id="$(tfc-helper-cache-get --table="AgentPools" --id-glob='*' | \
-      jq --arg name "${arg_agent_pool_name}" --raw-output 'map(select(.attributes | fromjson | .name == $name))[].id' \
-    )"
+    arg_agent_pool_id="$(tfc-list-agent-pools | jq --arg name "${arg_agent_pool_name}" --raw-output '.data | map(select(.attributes.name == $name))[].id')"
   fi
   if [[ -z "${arg_agent_pool_id:-}" ]]; then
     tfc-helper-logger --level=error "${0##*/}: agent pool id was not given"

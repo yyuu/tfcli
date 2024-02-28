@@ -58,9 +58,7 @@ if [[ -z "${arg_team_id:-}" ]]; then
   if [[ -z "${arg_team_name:-}" ]]; then
     :
   else
-    arg_team_id="$(tfc-helper-cache-get --table="Teams" --id-glob='*' | \
-      jq --arg name "${arg_team_name}" --raw-output 'map(select(.attributes | fromjson | .name == $name))[].id' \
-    )"
+    arg_team_id="$(tfc-list-teams | jq --arg name "${arg_team_name}" --raw-output '.data | map(select(.attributes.name == $name))[].id')"
   fi
   if [[ -z "${arg_team_id:-}" ]]; then
     tfc-helper-logger --level=error "${0##*/}: team id was not given"

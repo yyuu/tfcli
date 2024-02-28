@@ -197,7 +197,7 @@ else
       echo -n "." 1>&2
       resp="$(mktemp "${TMPDIR}/resp.XXXXXXXX")"
       curl "${curl_args[@]}" "${next_page}" > "${resp}"
-      data_length="$(jq --raw-output 'if .data then .data else [] end | length' < "${resp}")"
+      data_length="$(jq --raw-output '.data // [] | length' < "${resp}")"
       total_items="$(( total_items + data_length ))"
       resps+=("${resp}")
       next_page="$(jq --raw-output '.links.next' < "${resp}")"
@@ -213,7 +213,7 @@ else
     if [[ ${#resps[*]} -eq 1 ]]; then
       jq '.' "${resps[@]}"
     else
-      jq --slurp '{data: map(.data[]), links: {}, meta: {}}' "${resps[@]}"
+      jq --slurp '{data: map(.data // [] | .[]), links: (.[-1].links // {}), meta: (.[-1].meta // {})}' "${resps[@]}"
     fi
   fi
 fi
