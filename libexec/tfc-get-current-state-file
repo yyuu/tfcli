@@ -83,24 +83,17 @@ else
 fi
 
 hosted_state_id="$(jq --raw-output '.data.id' < "${resp}")"
-hosted_state_download_url=$(jq --raw-output '.data.attributes."hosted-state-download-url"' < "${resp}")
+if [[ -z "${hosted_state_id:-}" ]]; then
+  tfc-helper-logger --level=error "${0##*/}: unable to get the current state version from workspace: ${arg_workspace_id}"
+  exit 1
+fi
 
-curl \
-  --fail \
-  --max-time 30 \
-  --request GET \
-  --retry 5 \
-  --retry-max-time 60 \
-  --silent \
-  "${hosted_state_download_url}" \
-  | jq \
-    --arg hosted_state_id "${hosted_state_id}" \
-    '{
-      data: {
-        id: $hosted_state_id,
-        type: "hosted-states",
-        attributes: .,
-        links: {},
-        relationships: {}
-      }
-    }'
+hosted_state_download_url=$(jq --raw-output '.data.attributes."hosted-state-download-url"' < "${resp}")
+if [[ -z "${hosted_state_download_url:-}" ]]; then
+  tfc-helper-logger --level=error "${0##*/}: unable to get the download URL of current state version from workspace: ${arg_workspace_id}"
+  exit 1
+fi
+
+tfc-helper-httpclient --location --no-paginate --request-url="${hosted_state_download_url}" | \
+  jq --arg hosted_state_id "${hosted_state_id}" '{data: {id: $hosted_state_id, type: "hosted-states", attributes: ., links: {}, relationships: {}}}' | \
+    tfc-helper-cache-set --partial --table="StateVersionContents"
