@@ -10,6 +10,7 @@ unset arg_page_number
 unset arg_page_size
 unset arg_request
 unset arg_request_path
+unset arg_request_url
 unset arg_retry
 
 arg_paginate=1
@@ -86,6 +87,14 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
+  "--request-url" | "--request-url="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_request_url="${1#*=}"
+    else
+      arg_request_url="${2:-}"
+      shift 1
+    fi
+    ;;
   "--retry" | "--retry="* ) # option: TODO
     if [[ "$1" == *"="* ]]; then
       arg_retry="${1#*=}"
@@ -123,6 +132,7 @@ if [[ -z "${TF_CLOUD_TOKEN:-}" ]]; then
   tfc-helper-logger --level=error "${0##*/}: TF_CLOUD_TOKEN is not set"
   exit 1
 fi
+
 curl_args+=("--header" "authorization: Bearer ${TF_CLOUD_TOKEN}")
 curl_args+=("--header" "content-type: application/vnd.api+json")
 curl_args+=("--max-time" "30")
@@ -151,13 +161,17 @@ else
   curl_args+=("--silent")
 fi
 
-if [[ -z "${arg_request_path:-}" ]]; then
-  tfc-helper-logger --level=error "${0##*/}: request path was not given"
-  exit 1
-fi
-
 # TODO: to allow overriding this via envvar...?
 TF_CLOUD_ENDPOINT="https://${TFC_HOSTNAME:-app.terraform.io}/api/v2"
+
+if [[ -z "${arg_request_url:-}" ]]; then
+  if [[ -z "${arg_request_path:-}" ]]; then
+    tfc-helper-logger --level=error "${0##*/}: request path was not given"
+    exit 1
+  else
+    arg_request_url="${TF_CLOUD_ENDPOINT%/}/${arg_request_path#/}"
+  fi
+fi
 
 if [[ -n "${arg_page_number:-}" ]]; then
   # disable automatic pagination if page number was specified
@@ -170,7 +184,7 @@ if [[ -n "${arg_page_size:-}" ]]; then
 fi
 
 if [[ -z "${arg_paginate:-}" ]]; then
-  curl "${curl_args[@]}" "${TF_CLOUD_ENDPOINT%/}/${arg_request_path#/}" | \
+  curl "${curl_args[@]}" "${arg_request_url}" | \
     case "${arg_output:-json}" in
     "json" )
       jq '.'
@@ -190,7 +204,7 @@ else
   fi
   total_items=0
   resps=()
-  next_page="${TF_CLOUD_ENDPOINT%/}/${arg_request_path#/}"
+  next_page="${arg_request_url}"
   while [[ "${next_page:-null}" != null ]]; do
     # TODO: limit the # of items to NOT exceed the `--max-items`
     if [[ -z "${arg_max_items:-}" ]] || [[ "${total_items}" -lt "${arg_max_items}" ]]; then

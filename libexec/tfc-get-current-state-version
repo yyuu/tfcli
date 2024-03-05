@@ -77,10 +77,5 @@ if [[ -z "${arg_workspace_id:-}" ]]; then
 fi
 
 # https://developer.hashicorp.com/terraform/cloud-docs/api-docs/state-versions#fetch-the-current-state-version-for-a-workspace
-resp="$(mktemp "${TMPDIR}/resp.XXXXXXXX")"
-if tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}/current-state-version" "${httpclient_args[@]}" --no-paginate > "${resp}"; then
-  :
-else
-  tfc-helper-logger --level=error "${0##*/}: unable to get the current state version from workspace: ${arg_workspace_id}"
-  exit 1
-fi
+tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}/current-state-version" "${httpclient_args[@]}" --no-paginate | \
+  tfc-helper-cache-set --partial --table="StateVersions"
