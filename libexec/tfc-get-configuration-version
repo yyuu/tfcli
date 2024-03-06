@@ -20,13 +20,6 @@ while [[ $# -gt 0 ]]; do
       jq --raw-output 'map("--configuration-version-id=\(.id)") | unique[]'
     exit 0
     ;;
-  "--debug" ) # option: Enable debug output
-    set -x
-    ;;
-  "--help" ) # option: Display help message
-    tfc-helper-help "${BASH_SOURCE##*/}"
-    exit 0
-    ;;
   "--configuration-version-id" | "--configuration-version-id="* ) # option: Configuration Version ID
     if [[ "$1" == *"="* ]]; then
       arg_configuration_version_id="${1#*=}"
@@ -34,6 +27,16 @@ while [[ $# -gt 0 ]]; do
       arg_configuration_version_id="${2:-}"
       shift 1
     fi
+    ;;
+  "--debug" ) # option: Enable debug output
+    set -x
+    ;;
+  "--help" ) # option: Display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--verbose" | "-v" ) # option: Enable verbose output
+    export VERBOSITY="$(( VERBOSITY + 1 ))"
     ;;
   * )
     tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"

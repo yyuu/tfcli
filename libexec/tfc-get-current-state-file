@@ -19,8 +19,6 @@ while [[ $# -gt 0 ]]; do
       jq --raw-output 'map("--workspace-id=\(.id)") | unique[]'
     tfc-helper-cache-get --table="Workspaces" --id-glob='*' | \
       jq --raw-output 'map("--workspace-name=\(.attributes | fromjson | .name)") | unique[]'
-#   tfc-helper-cache-get --table="Workspaces" --id-glob='*' | \
-#     jq --raw-output 'map([.id, (.attributes | fromjson | .name)][]) | unique[]'
     exit 0
     ;;
   "--debug" ) # option: Enable debug output
@@ -29,6 +27,9 @@ while [[ $# -gt 0 ]]; do
   "--help" ) # option: Display help message
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
+    ;;
+  "--verbose" | "-v" ) # option: Enable verbose output
+    export VERBOSITY="$(( VERBOSITY + 1 ))"
     ;;
   "--workspace-id" | "--workspace-id="* ) # option: Workspace ID
     if [[ "$1" == *"="* ]]; then

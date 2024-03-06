@@ -35,6 +35,14 @@ export TFCLI_CACHE_EXPIRY="${TFCLI_CACHE_EXPIRY:-8640000}" # 100 days
 
 export SQLITE_BUSY_TIMEOUT="${SQLITE_BUSY_TIMEOUT:-60000}"
 
+export VERBOSE="${VERBOSE:-}"
+if [[ -z "${VERBOSE:-}" ]]; then
+  export VERBOSITY="${VERBOSITY:-0}"
+else
+  # warn >>> info >>> debug >>> trace
+  export VERBOSITY="${VERBOSITY:-3}"
+fi
+
 unset arg_action
 
 options=()

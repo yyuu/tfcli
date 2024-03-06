@@ -38,6 +38,9 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
+  "--verbose" | "-v" ) # option: Enable verbose output
+    export VERBOSITY="$(( VERBOSITY + 1 ))"
+    ;;
   * )
     tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"
     exit 1

@@ -15,21 +15,6 @@ while [[ $# -gt 0 ]]; do
   "--" )
     break
     ;;
-  "--complete" )
-    tfc-helper-complete "${BASH_SOURCE##*/}"
-    tfc-helper-cache-get --table="AgentPools" --id-glob='*' | \
-      jq --raw-output 'map("--agent-pool-id=\(.id)") | unique[]'
-    tfc-helper-cache-get --table="AgentPools" --id-glob='*' | \
-      jq --raw-output 'map("--agent-pool-name=\(.attributes | fromjson | .name)") | unique[]'
-    exit 0
-    ;;
-  "--debug" ) # option: Enable debug output
-    set -x
-    ;;
-  "--help" ) # option: Display help message
-    tfc-helper-help "${BASH_SOURCE##*/}"
-    exit 0
-    ;;
   "--agent-pool-id" | "--agent-pool-id="* | "--apool-id" | "--apool-id="* ) # option: Agent Pool ID
     if [[ "$1" == *"="* ]]; then
       arg_agent_pool_id="${1#*=}"
@@ -45,6 +30,24 @@ while [[ $# -gt 0 ]]; do
       arg_agent_pool_name="${2:-}"
       shift 1
     fi
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="AgentPools" --id-glob='*' | \
+      jq --raw-output 'map("--agent-pool-id=\(.id)") | unique[]'
+    tfc-helper-cache-get --table="AgentPools" --id-glob='*' | \
+      jq --raw-output 'map("--agent-pool-name=\(.attributes | fromjson | .name)") | unique[]'
+    exit 0
+    ;;
+  "--debug" ) # option: Enable debug output
+    set -x
+    ;;
+  "--help" ) # option: Display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--verbose" | "-v" ) # option: Enable verbose output
+    export VERBOSITY="$(( VERBOSITY + 1 ))"
     ;;
   * )
     tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"

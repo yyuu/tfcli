@@ -103,6 +103,9 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
+  "--verbose" | "-v" ) # option: Enable verbose output
+    export VERBOSITY="$(( VERBOSITY + 1 ))"
+    ;;
   * )
     curl_args+=("${1:-}")
     ;;
@@ -155,7 +158,7 @@ else
   fi
 fi
 
-if [[ -n "${VERBOSE:-}" ]]; then
+if [[ "${VERBOSITY:-0}" -gt 2 ]]; then
   curl_args+=("--verbose")
 else
   curl_args+=("--silent")
@@ -208,7 +211,12 @@ else
   while [[ "${next_page:-null}" != null ]]; do
     # TODO: limit the # of items to NOT exceed the `--max-items`
     if [[ -z "${arg_max_items:-}" ]] || [[ "${total_items}" -lt "${arg_max_items}" ]]; then
-      echo -n "." 1>&2
+      { if [[ "${VERBOSITY:-0}" -gt 1 ]]; then
+          echo "${0##*/}> ${next_page}"
+        elif [[ "${VERBOSITY:-0}" -gt 0 ]]; then
+          echo -n "."
+        fi
+      } 1>&2
       resp="$(mktemp "${TMPDIR}/resp.XXXXXXXX")"
       curl "${curl_args[@]}" "${next_page}" > "${resp}"
       data_length="$(jq --raw-output '.data // [] | length' < "${resp}")"
@@ -219,7 +227,12 @@ else
       break
     fi
   done
-  echo 1>&2
+  { if [[ "${VERBOSITY:-0}" -gt 1 ]]; then
+      echo "${0##*/}:|"
+    elif [[ "${VERBOSITY:-0}" -gt 0 ]]; then
+      echo
+    fi
+  } 1>&2
   if [[ ${#resps[*]} -eq 0 ]]; then
     tfc-helper-logger --level=error "${0##*/}: something went wrong. no response was captured from ${next_page}"
     exit 1

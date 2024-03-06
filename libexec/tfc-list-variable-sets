@@ -43,6 +43,9 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
+  "--verbose" | "-v" ) # option: Enable verbose output
+    export VERBOSITY="$(( VERBOSITY + 1 ))"
+    ;;
   "--workspace-id" | "--workspace-id="* ) # option: Workspace ID
     if [[ "$1" == *"="* ]]; then
       arg_workspace_id="${1#*=}"

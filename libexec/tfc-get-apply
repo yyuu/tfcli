@@ -14,6 +14,14 @@ while [[ $# -gt 0 ]]; do
   "--" )
     break
     ;;
+  "--apply-id" | "--apply-id="* ) # option: Apply ID
+    if [[ "$1" == *"="* ]]; then
+      arg_apply_id="${1#*=}"
+    else
+      arg_apply_id="${2:-}"
+      shift 1
+    fi
+    ;;
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
     tfc-helper-cache-get --table="Applies" --id-glob='*' | \
@@ -27,13 +35,8 @@ while [[ $# -gt 0 ]]; do
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
     ;;
-  "--apply-id" | "--apply-id="* ) # option: Apply ID
-    if [[ "$1" == *"="* ]]; then
-      arg_apply_id="${1#*=}"
-    else
-      arg_apply_id="${2:-}"
-      shift 1
-    fi
+  "--verbose" | "-v" ) # option: Enable verbose output
+    export VERBOSITY="$(( VERBOSITY + 1 ))"
     ;;
   * )
     tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"
