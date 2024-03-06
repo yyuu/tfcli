@@ -105,6 +105,7 @@ while [[ $# -gt 0 ]]; do
     ;;
   "--verbose" ) # option: Enable verbose output
     export VERBOSE=1
+    export VERBOSITY="$(( VERBOSITY + 1 ))"
     ;;
   * )
     curl_args+=("${1:-}")
@@ -158,7 +159,7 @@ else
   fi
 fi
 
-if [[ -n "${VERBOSE:-}" ]]; then
+if [[ "${VERBOSITY:-0}" -gt 2 ]]; then
   curl_args+=("--verbose")
 else
   curl_args+=("--silent")
@@ -211,10 +212,10 @@ else
   while [[ "${next_page:-null}" != null ]]; do
     # TODO: limit the # of items to NOT exceed the `--max-items`
     if [[ -z "${arg_max_items:-}" ]] || [[ "${total_items}" -lt "${arg_max_items}" ]]; then
-      { if [[ -z "${VERBOSE:-}" ]]; then
-          :
-        else
-          echo "curl> ${next_page}"
+      { if [[ "${VERBOSITY:-0}" -gt 1 ]]; then
+          echo "${0##*/}> ${next_page}"
+        elif [[ "${VERBOSITY:-0}" -gt 0 ]]; then
+          echo -n "."
         fi
       } 1>&2
       resp="$(mktemp "${TMPDIR}/resp.XXXXXXXX")"
@@ -227,9 +228,9 @@ else
       break
     fi
   done
-  { if [[ -z "${VERBOSE:-}" ]]; then
-      :
-    else
+  { if [[ "${VERBOSITY:-0}" -gt 1 ]]; then
+      echo "${0##*/}:|"
+    elif [[ "${VERBOSITY:-0}" -gt 0 ]]; then
       echo
     fi
   } 1>&2
