@@ -20,6 +20,9 @@ while [[ $# -gt 0 ]]; do
   "--help" ) # option: Display help message
     exit 0
     ;;
+  "--verbose" ) # option: Enable verbose output
+    export VERBOSE=1
+    ;;
   * )
     arg_command="${1:-}"
     ;;

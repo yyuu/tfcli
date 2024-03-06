@@ -14,6 +14,14 @@ while [[ $# -gt 0 ]]; do
   "--" )
     break
     ;;
+  "--agent-id" | "--agent-id="* ) # option: Agent ID
+    if [[ "$1" == *"="* ]]; then
+      arg_agent_id="${1#*=}"
+    else
+      arg_agent_id="${2:-}"
+      shift 1
+    fi
+    ;;
   "--complete" )
     tfc-helper-complete "${BASH_SOURCE##*/}"
     tfc-helper-cache-get --table="Agents" --id-glob='*' | \
@@ -27,13 +35,8 @@ while [[ $# -gt 0 ]]; do
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
     ;;
-  "--agent-id" | "--agent-id="* ) # option: Agent ID
-    if [[ "$1" == *"="* ]]; then
-      arg_agent_id="${1#*=}"
-    else
-      arg_agent_id="${2:-}"
-      shift 1
-    fi
+  "--verbose" ) # option: Enable verbose output
+    export VERBOSE=1
     ;;
   * )
     tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"
