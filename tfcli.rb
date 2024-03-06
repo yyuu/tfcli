@@ -1,7 +1,7 @@
 require 'formula'
 
 class Tfcli < Formula
-  VERSION = '0.20240305.1'
+  VERSION = '0.20240306.1'
   homepage 'https://github.com/yyuu/tfcli'
   url 'https://github.com/yyuu/tfcli.git', tag: "v#{VERSION}"
   head 'https://github.com/yyuu/tfcli.git', branch: "main"
