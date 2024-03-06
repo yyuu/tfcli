@@ -35,8 +35,7 @@ while [[ $# -gt 0 ]]; do
       shift 1
     fi
     ;;
-  "--verbose" ) # option: Enable verbose output
-    export VERBOSE=1
+  "--verbose" | "-v" ) # option: Enable verbose output
     export VERBOSITY="$(( VERBOSITY + 1 ))"
     ;;
   * )
