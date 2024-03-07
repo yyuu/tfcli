@@ -11,6 +11,7 @@ arg_workspace_name="${TF_WORKSPACE:-}"
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
   "--" )
+    shift 1
     break
     ;;
   "--complete" )

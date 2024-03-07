@@ -13,6 +13,7 @@ httpclient_args=()
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
   "--" )
+    shift 1
     break
     ;;
   "--agent-pool-id" | "--agent-pool-id="* | "--apool-id" | "--apool-id="* ) # option: Agent Pool ID
