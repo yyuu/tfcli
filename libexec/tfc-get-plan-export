@@ -7,11 +7,10 @@ set -euo pipefail
 
 unset arg_plan_export_id
 
-httpclient_args=()
-
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
   "--" )
+    shift 1
     break
     ;;
   "--complete" )
@@ -52,4 +51,4 @@ if [[ -z "${arg_plan_export_id:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/plan-exports#show-a-plan-export
-tfc-helper-httpclient --request-path="/plan-exports/${arg_plan_export_id}" "${httpclient_args[@]}" --no-paginate
+tfc-helper-httpclient --request-path="/plan-exports/${arg_plan_export_id}" --no-paginate

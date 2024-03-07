@@ -8,11 +8,11 @@ set -euo pipefail
 unset arg_workspace_id
 
 arg_workspace_name="${TF_WORKSPACE:-}"
-httpclient_args=()
 
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
   "--" )
+    shift 1
     break
     ;;
   "--complete" )
@@ -70,5 +70,5 @@ if [[ -z "${arg_workspace_id:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/run#list-runs-in-a-workspace
-tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}/runs" "${httpclient_args[@]}" | \
+tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}/runs" | \
   tfc-helper-cache-set --partial --table="Runs"

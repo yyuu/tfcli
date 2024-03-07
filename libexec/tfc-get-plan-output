@@ -8,11 +8,10 @@ unset arg_output
 unset arg_plan_id
 unset arg_run_id
 
-httpclient_args=()
-
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
   "--" )
+    shift 1
     break
     ;;
   "--complete" )
@@ -80,11 +79,11 @@ if [[ -z "${arg_plan_id:-}" ]]; then
     exit 1
   else
     # https://www.terraform.io/cloud-docs/api-docs/plans#retrieve-the-json-execution-plan
-    tfc-helper-httpclient --request-path="/runs/${arg_run_id}/plan/json-output" "${httpclient_args[@]}" --no-paginate --output=text > "${resp}"
+    tfc-helper-httpclient --request-path="/runs/${arg_run_id}/plan/json-output" --no-paginate --output=text > "${resp}"
   fi
 else
   # https://www.terraform.io/cloud-docs/api-docs/plans#retrieve-the-json-execution-plan
-  tfc-helper-httpclient --request-path="/plans/${arg_plan_id}/json-output" "${httpclient_args[@]}" --no-paginate --output=text > "${resp}"
+  tfc-helper-httpclient --request-path="/plans/${arg_plan_id}/json-output" --no-paginate --output=text > "${resp}"
 fi
 
 # Despite the API naming, this API doesn't return JSON but HTML....
@@ -94,30 +93,17 @@ if [[ -z "${json_output_uri:-}" ]]; then
     arg_plan_id="$(tfc-get-run --run-id="${arg_run_id}" --output=json | jq --raw-output '.data.relationships.plan.data.id')"
   fi
   log_read_url="$(tfc-get-plan --plan-id="${arg_plan_id}" --output=json | jq --raw-output '.data.attributes["log-read-url"]')"
-  log_warn "${0##*/}: failed to obtain an URI for json-output (error during plan run?)"
+  tfc-helper-logger --level=warn "${0##*/}: failed to obtain an URI for json-output (error during plan run?)"
   if [[ -z "${log_read_url:-}" ]]; then
     :
   else
-    curl \
-      --fail \
-      --max-time 30 \
-      --retry 5 \
-      --retry-max-time 60 \
-      --silent \
-      "${log_read_url}" \
-      | sed -n -e '/^{/p' \
-      | jq .
+    tfc-helper-httpclient --location --no-paginate --output=text --request-url="${log_read_url}" | \
+      sed -n -e '/^{/p' | jq '.'
   fi
   exit 1
 fi
 
-curl \
-  --fail \
-  --max-time 30 \
-  --retry 5 \
-  --retry-max-time 60 \
-  --silent \
-  "${json_output_uri}" | \
+tfc-helper-httpclient --location --no-paginate --request-url="${json_output_uri}" | \
   case "${arg_output:-diff}" in
   "diff" )
     cat > "${TMPDIR}/output.json"
@@ -157,7 +143,7 @@ EOS
     cat
     ;;
   * )
-    log_error "${0##*/}: unknown output format: ${arg_output:-}"
+    tfc-helper-logger --level=error "${0##*/}: unknown output format: ${arg_output:-}"
     exit 1
     ;;
   esac

@@ -8,11 +8,10 @@ set -euo pipefail
 unset arg_varset_id
 unset arg_varset_name
 
-httpclient_args=()
-
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
   "--" )
+    shift 1
     break
     ;;
   "--complete" )
@@ -70,5 +69,5 @@ if [[ -z "${arg_varset_id:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/variable-sets#list-variables-in-a-variable-set
-tfc-helper-httpclient --request-path="/varsets/${arg_varset_id}/relationships/vars" "${httpclient_args[@]}" | \
+tfc-helper-httpclient --request-path="/varsets/${arg_varset_id}/relationships/vars" | \
   tfc-helper-cache-set --partial --table="VariableSetVariables"

@@ -5,11 +5,10 @@ set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
-httpclient_args=()
-
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
   "--" )
+    shift 1
     break
     ;;
   "--complete" )
@@ -35,5 +34,5 @@ while [[ $# -gt 0 ]]; do
 done
 
 # https://www.terraform.io/cloud-docs/api-docs/organizations#list-organizations
-tfc-helper-httpclient --request-path="/organizations" "${httpclient_args[@]}" | \
+tfc-helper-httpclient --request-path="/organizations" | \
   tfc-helper-cache-set --table="Organizations"

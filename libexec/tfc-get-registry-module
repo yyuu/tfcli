@@ -11,11 +11,11 @@ unset arg_provider
 unset arg_registry_name
 
 arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
-httpclient_args=()
 
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
   "--" )
+    shift 1
     break
     ;;
   "--complete" )
@@ -112,5 +112,5 @@ if [[ -z "${arg_provider:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/private-registry/modules#get-a-module
-tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/registry-modules/${arg_registry_name}/${arg_namespace}/${arg_name}/${arg_provider}" "${httpclient_args[@]}" --no-paginate | \
+tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/registry-modules/${arg_registry_name}/${arg_namespace}/${arg_name}/${arg_provider}" --no-paginate | \
   tfc-helper-cache-set --partial --table="RegistryModules"

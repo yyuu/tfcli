@@ -7,11 +7,10 @@ set -euo pipefail
 
 unset arg_configuration_version_id
 
-httpclient_args=()
-
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
   "--" )
+    shift 1
     break
     ;;
   "--complete" )
@@ -52,4 +51,4 @@ if [[ -z "${arg_configuration_version_id:-}" ]]; then
 fi
 
 # https://developer.hashicorp.com/terraform/cloud-docs/api-docs/configuration-versions#show-a-configuration-version-s-commit-information
-tfc-helper-httpclient --request-path="/configuration-versions/${arg_configuration_version_id}/ingress-attributes" "${httpclient_args[@]}" --no-paginate
+tfc-helper-httpclient --request-path="/configuration-versions/${arg_configuration_version_id}/ingress-attributes" --no-paginate
