@@ -8,8 +8,6 @@ unset arg_output
 unset arg_plan_id
 unset arg_run_id
 
-httpclient_args=()
-
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
   "--" )
@@ -81,11 +79,11 @@ if [[ -z "${arg_plan_id:-}" ]]; then
     exit 1
   else
     # https://www.terraform.io/cloud-docs/api-docs/plans#retrieve-the-json-execution-plan
-    tfc-helper-httpclient --request-path="/runs/${arg_run_id}/plan/json-output" "${httpclient_args[@]}" --no-paginate --output=text > "${resp}"
+    tfc-helper-httpclient --request-path="/runs/${arg_run_id}/plan/json-output" --no-paginate --output=text > "${resp}"
   fi
 else
   # https://www.terraform.io/cloud-docs/api-docs/plans#retrieve-the-json-execution-plan
-  tfc-helper-httpclient --request-path="/plans/${arg_plan_id}/json-output" "${httpclient_args[@]}" --no-paginate --output=text > "${resp}"
+  tfc-helper-httpclient --request-path="/plans/${arg_plan_id}/json-output" --no-paginate --output=text > "${resp}"
 fi
 
 # Despite the API naming, this API doesn't return JSON but HTML....

@@ -9,7 +9,6 @@ unset arg_workspace_id
 
 arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
 arg_workspace_name="${TF_WORKSPACE:-}"
-httpclient_args=()
 
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
@@ -85,9 +84,9 @@ if [[ -z "${arg_workspace_id:-}" ]]; then
     tfc-helper-logger --level=error "${0##*/}: organization name was not given"
     exit 1
   fi
-  tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/varsets" "${httpclient_args[@]}" | \
+  tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/varsets" | \
     tfc-helper-cache-set --table="VariableSets"
 else
-  tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}/varsets" "${httpclient_args[@]}" | \
+  tfc-helper-httpclient --request-path="/workspaces/${arg_workspace_id}/varsets" | \
     tfc-helper-cache-set --partial --table="VariableSets"
 fi

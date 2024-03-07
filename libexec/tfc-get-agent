@@ -7,8 +7,6 @@ set -euo pipefail
 
 unset arg_agent_id
 
-httpclient_args=()
-
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
   "--" )
@@ -53,5 +51,5 @@ if [[ -z "${arg_agent_id:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/agents#show-an-agent
-tfc-helper-httpclient --request-path="/agents/${arg_agent_id}" "${httpclient_args[@]}" --no-paginate | \
+tfc-helper-httpclient --request-path="/agents/${arg_agent_id}" --no-paginate | \
   tfc-helper-cache-set --partial --table="Agents"

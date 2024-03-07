@@ -6,7 +6,6 @@ set -euo pipefail
 [[ -z "${DEBUG:-}" ]] || set -x
 
 arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
-httpclient_args=()
 
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
@@ -56,5 +55,5 @@ if [[ -z "${arg_organization_name:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/organizations#show-an-organization
-tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}" "${httpclient_args[@]}" --no-paginate | \
+tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}" --no-paginate | \
   tfc-helper-cache-set --partial --table="Organizations"

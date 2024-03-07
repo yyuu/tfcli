@@ -6,7 +6,6 @@ set -euo pipefail
 [[ -z "${DEBUG:-}" ]] || set -x
 
 arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
-httpclient_args=()
 
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
@@ -54,5 +53,5 @@ if [[ -z "${arg_organization_name:-}" ]]; then
 fi
 
 # https://www.terraform.io/cloud-docs/api-docs/private-registry/providers#list-terraform-registry-providers-for-an-organization
-tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/registry-providers" "${httpclient_args[@]}" | \
+tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/registry-providers" | \
   tfc-helper-cache-set --table="RegistryProviders"
