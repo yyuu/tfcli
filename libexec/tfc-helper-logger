@@ -10,6 +10,7 @@ arg_messages=()
 while [[ $# -gt 0 ]]; do
   case "${1:-}" in
   "--" )
+    shift 1
     break
     ;;
   "--complete" )
@@ -55,10 +56,10 @@ done
       ;;
     esac
   fi
-  if [[ ${#arg_messages[@]} -eq 0 ]]; then
+  if [[ ${#arg_messages[*]} -eq 0 ]]; then
     cat
   else
-    printf '%s\n' "${arg_messages[@]}"
+    printf '%s\n' "${arg_messages[*]}"
   fi
   if [[ -t 2 ]]; then
     printf '\033[0m'
