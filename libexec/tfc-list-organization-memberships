@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# summary: https://www.terraform.io/cloud-docs/api-docs/teams#list-teams
+# summary: https://developer.hashicorp.com/terraform/cloud-docs/api-docs/organization-memberships#list-memberships-for-an-organization
 
 set -euo pipefail
 
@@ -19,7 +19,6 @@ while [[ $# -gt 0 ]]; do
       jq --raw-output 'map("--organization-name=\(.id)") | unique[]'
     tfc-helper-cache-get --table="Organizations" --id-glob='*' | \
       jq --raw-output 'map("--organization-name=\(.attributes | fromjson | .name)") | unique[]'
-    exit 0
     ;;
   "--debug" ) # option: Enable debug output
     set -x
@@ -52,6 +51,6 @@ if [[ -z "${arg_organization_name:-}" ]]; then
   exit 1
 fi
 
-# https://www.terraform.io/cloud-docs/api-docs/teams#list-teams
-tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/teams" | \
-  tfc-helper-cache-set --table="Teams"
+# https://developer.hashicorp.com/terraform/cloud-docs/api-docs/organization-memberships#list-memberships-for-an-organization
+tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/organization-memberships" | \
+  tfc-helper-cache-set --table="OrganizationMemberships"
