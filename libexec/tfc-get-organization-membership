@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# summary: https://developer.hashicorp.com/terraform/cloud-docs/api-docs/organization-memberships#show-a-membership
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+unset arg_organization_membership_id
+unset arg_organization_membership_name
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    shift 1
+    break
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="OrganizationMemberships" --id-glob='*' | \
+      jq --raw-output 'map("--organization-membership-id=\(.id)") | unique[]'
+    tfc-helper-cache-get --table="OrganizationMemberships" --id-glob='*' | \
+      jq --raw-output 'map("--organization-membership-name=\(.attributes | fromjson | .email)") | unique[]'
+    exit 0
+    ;;
+  "--debug" ) # option: Enable debug output
+    set -x
+    ;;
+  "--help" ) # option: Display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--organization-membership-name" | "--organization-membership-name="* ) # option: Organization Membership name
+    if [[ "$1" == *"="* ]]; then
+      arg_organization_membership_name="${1#*=}"
+    else
+      arg_organization_membership_name="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--organization-membership-id" | "--organization-membership-id="* ) # option: Organization Membership ID
+    if [[ "$1" == *"="* ]]; then
+      arg_organization_membership_id="${1#*=}"
+    else
+      arg_organization_membership_id="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--verbose" | "-v" ) # option: Enable verbose output
+    export VERBOSITY="$(( VERBOSITY + 1 ))"
+    ;;
+  * )
+    tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"
+    exit 1
+    ;;
+  esac
+  shift 1
+done
+
+if [[ -z "${arg_organization_membership_id:-}" ]]; then
+  if [[ -z "${arg_organization_membership_name:-}" ]]; then
+    :
+  else
+    arg_organization_membership_id="$(tfc-list-organization-memberships | jq --arg name "${arg_organization_membership_name}" --raw-output '.data | map(select(.attributes.email == $name))[].id')"
+  fi
+  if [[ -z "${arg_organization_membership_id:-}" ]]; then
+    tfc-helper-logger --level=error "${0##*/}: organization membership id was not given"
+    exit 1
+  fi
+fi
+
+# https://developer.hashicorp.com/terraform/cloud-docs/api-docs/organization-memberships#show-a-membership
+tfc-helper-httpclient --request-path="/organization-memberships/${arg_organization_membership_id}" --no-paginate | \
+  tfc-helper-cache-set --partial --table="OrganizationMemberships"
