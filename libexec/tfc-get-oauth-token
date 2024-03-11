@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# summary: https://developer.hashicorp.com/terraform/cloud-docs/api-docs/oauth-tokens#show-an-oauth-token
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+unset arg_oauth_token_id
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    shift 1
+    break
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="OAuthTokens" --id-glob='*' | \
+      jq --raw-output 'map("--oauth-token-id=\(.id)") | unique[]'
+    exit 0
+    ;;
+  "--debug" ) # option: Enable debug output
+    set -x
+    ;;
+  "--help" ) # option: Display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--oauth-token-id" | "--oauth-token-id="* | "--ot-id" | "--ot-id="* ) # option: OAuth Token ID
+    if [[ "$1" == *"="* ]]; then
+      arg_oauth_token_id="${1#*=}"
+    else
+      arg_oauth_token_id="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--verbose" | "-v" ) # option: Enable verbose output
+    export VERBOSITY="$(( VERBOSITY + 1 ))"
+    ;;
+  * )
+    tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"
+    exit 1
+    ;;
+  esac
+  shift 1
+done
+
+if [[ -z "${arg_oauth_token_id:-}" ]]; then
+  tfc-helper-logger --level=error "${0##*/}: oauth token id was not given"
+  exit 1
+fi
+
+# https://developer.hashicorp.com/terraform/cloud-docs/api-docs/oauth-tokens#show-an-oauth-token
+tfc-helper-httpclient --request-path="/oauth-tokens/${arg_oauth_token_id}" --no-paginate | \
+  tfc-helper-cache-set --partial --table="OAuthTokens"
