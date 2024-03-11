@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# summary: https://developer.hashicorp.com/terraform/cloud-docs/api-docs/projects#list-projects
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    shift 1
+    break
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="Organizations" --id-glob='*' | \
+      jq --raw-output 'map("--organization-name=\(.id)") | unique[]'
+    tfc-helper-cache-get --table="Organizations" --id-glob='*' | \
+      jq --raw-output 'map("--organization-name=\(.attributes | fromjson | .name)") | unique[]'
+    exit 0
+    ;;
+  "--debug" ) # option: Enable debug output
+    set -x
+    ;;
+  "--help" ) # option: Display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--organization-name" | "--organization-name="* ) # option: Organization name
+    if [[ "$1" == *"="* ]]; then
+      arg_organization_name="${1#*=}"
+    else
+      arg_organization_name="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--verbose" | "-v" ) # option: Enable verbose output
+    export VERBOSITY="$(( VERBOSITY + 1 ))"
+    ;;
+  * )
+    tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"
+    exit 1
+    ;;
+  esac
+  shift 1
+done
+
+if [[ -z "${arg_organization_name:-}" ]]; then
+  tfc-helper-logger --level=error "${0##*/}: organization name was not given"
+  exit 1
+fi
+
+# https://developer.hashicorp.com/terraform/cloud-docs/api-docs/projects#list-projects
+tfc-helper-httpclient --request-path="/organizations/${arg_organization_name}/projects" | \
+  tfc-helper-cache-set --table="Projects"

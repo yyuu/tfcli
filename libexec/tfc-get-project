@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# summary: https://developer.hashicorp.com/terraform/cloud-docs/api-docs/projects#show-project
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+unset arg_project_id
+unset arg_project_name
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    shift 1
+    break
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="Projects" --id-glob='*' | \
+      jq --raw-output 'map("--project-id=\(.id)") | unique[]'
+    tfc-helper-cache-get --table="Projects" --id-glob='*' | \
+      jq --raw-output 'map("--project-name=\(.attributes | fromjson | .name)") | unique[]'
+    exit 0
+    ;;
+  "--debug" ) # option: Enable debug output
+    set -x
+    ;;
+  "--help" ) # option: Display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--project-id" | "--project-id="* | "--prj-id" | "--prj-id="* ) # option: Project ID
+    if [[ "$1" == *"="* ]]; then
+      arg_project_id="${1#*=}"
+    else
+      arg_project_id="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--project-name" | "--project-name="* | "--prj-name" | "--prj-name="* ) # option: Project name
+    if [[ "$1" == *"="* ]]; then
+      arg_project_name="${1#*=}"
+    else
+      arg_project_name="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--verbose" | "-v" ) # option: Enable verbose output
+    export VERBOSITY="$(( VERBOSITY + 1 ))"
+    ;;
+  * )
+    tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"
+    exit 1
+    ;;
+  esac
+  shift 1
+done
+
+if [[ -z "${arg_project_id:-}" ]]; then
+  if [[ -z "${arg_project_name:-}" ]]; then
+    :
+  else
+    arg_project_id="$(tfc-list-projects | jq --arg name "${arg_project_name}" --raw-output '.data | map(select(.attributes.name == $name))[].id')"
+  fi
+  if [[ -z "${arg_project_id:-}" ]]; then
+    tfc-helper-logger --level=error "${0##*/}: project id was not given"
+    exit 1
+  fi
+fi
+
+# https://developer.hashicorp.com/terraform/cloud-docs/api-docs/projects#show-project
+tfc-helper-httpclient --request-path="/projects/${arg_project_id}" --no-paginate | \
+  tfc-helper-cache-set --partial --table="Projects"

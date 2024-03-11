@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# summary: https://developer.hashicorp.com/terraform/cloud-docs/api-docs/user-tokens#list-user-tokens
+
+set -euo pipefail
+
+[[ -z "${DEBUG:-}" ]] || set -x
+
+unset arg_user_id
+unset arg_user_name
+
+while [[ $# -gt 0 ]]; do
+  case "${1:-}" in
+  "--" )
+    shift 1
+    break
+    ;;
+  "--complete" )
+    tfc-helper-complete "${BASH_SOURCE##*/}"
+    tfc-helper-cache-get --table="Users" --id-glob='*' | \
+      jq --raw-output 'map("--user-id=\(.id)") | unique[]'
+    tfc-helper-cache-get --table="Users" --id-glob='*' | \
+      jq --raw-output 'map("--user-name=\(.attributes | fromjson | .username)") | unique[]'
+    exit 0
+    ;;
+  "--debug" ) # option: Enable debug output
+    set -x
+    ;;
+  "--help" ) # option: Display help message
+    tfc-helper-help "${BASH_SOURCE##*/}"
+    exit 0
+    ;;
+  "--user-id" | "--user-id="* ) # option: User id
+    if [[ "$1" == *"="* ]]; then
+      arg_user_id="${1#*=}"
+    else
+      arg_user_id="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--user-name" | "--user-name="* ) # option: User name
+    if [[ "$1" == *"="* ]]; then
+      arg_user_name="${1#*=}"
+    else
+      arg_user_name="${2:-}"
+      shift 1
+    fi
+    ;;
+  "--verbose" | "-v" ) # option: Enable verbose output
+    export VERBOSITY="$(( VERBOSITY + 1 ))"
+    ;;
+  * )
+    tfc-helper-logger --level=error "${0##*/}: unrecognized option: ${1:-}"
+    exit 1
+    ;;
+  esac
+  shift 1
+done
+
+if [[ -z "${arg_user_id:-}" ]]; then
+  if [[ -z "${arg_user_name:-}" ]]; then
+    :
+  else
+    arg_user_id="$(tfc-helper-cache-get --table="Users" --id-glob='*' | \
+      jq --arg name "${arg_user_name}" --raw-output 'map(select(.attributes | fromjson | .username == $name))[].id' \
+    )"
+  fi
+  if [[ -z "${arg_user_id:-}" ]]; then
+    tfc-helper-logger --level=error "${0##*/}: user id was not given"
+    exit 1
+  fi
+fi
+
+# https://developer.hashicorp.com/terraform/cloud-docs/api-docs/user-tokens#list-user-tokens
+tfc-helper-httpclient --request-path="/users/${arg_user_id}/authentication-tokens" | \
+  tfc-helper-cache-set --partial --table="AuthenticationTokens"
