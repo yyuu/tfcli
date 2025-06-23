@@ -88,21 +88,25 @@ if jq '.' > "${raw_data}"; then
       _UpdatedAt: now,
       _DeletedAt: -1
     })' < "${raw_data}" > "${data}"
-  json2sqlite3_opts=()
-  if [[ -z "${arg_partial:-}" ]]; then
-    json2sqlite3_opts+=("--soft-delete")
+  if [[ "${TFCLI_DISABLE_CACHE:-false}" == true ]]; then
+    : # skip managing cache entries if `TFCCLI_DISABLE_CACHE=true` was set
   else
-    json2sqlite3_opts+=("--no-soft-delete")
+    json2sqlite3_opts=()
+    if [[ -z "${arg_partial:-}" ]]; then
+      json2sqlite3_opts+=("--soft-delete")
+    else
+      json2sqlite3_opts+=("--no-soft-delete")
+    fi
+    json2sqlite3 \
+      --primary-key-column="_Id:TEXT" \
+      --created-column="_CreatedAt:NUMERIC" \
+      --updated-column="_UpdatedAt:NUMERIC" \
+      --deleted-column="_DeletedAt:NUMERIC" \
+      --preserve-created \
+      "${json2sqlite3_opts[@]}" \
+      "${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}" \
+      "${arg_table}" < "${data}" > /dev/null
   fi
-  json2sqlite3 \
-    --primary-key-column="_Id:TEXT" \
-    --created-column="_CreatedAt:NUMERIC" \
-    --updated-column="_UpdatedAt:NUMERIC" \
-    --deleted-column="_DeletedAt:NUMERIC" \
-    --preserve-created \
-    "${json2sqlite3_opts[@]}" \
-    "${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}" \
-    "${arg_table}" < "${data}" > /dev/null
 
   # behave as write-through cache
   jq '.' "${raw_data}"
