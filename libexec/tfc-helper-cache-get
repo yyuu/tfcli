@@ -77,34 +77,38 @@ on_exit() {
 trap on_exit EXIT
 
 data="$(mktemp "${TMPDIR}/data.XXXXXX")"
-if [[ -z "${arg_id_glob:-}" ]]; then
-  sqlite3 "${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}" \
-    ".mode json" \
-    ".parameter set @TFCLI_CACHE_EXPIRY ${TFCLI_CACHE_EXPIRY:-8640000}" \
-    ".parameter set @arg_id_value ${arg_id_value:-}" \
-    ".timeout ${SQLITE_BUSY_TIMEOUT:-60000}" \
-    "SELECT
-      *
-    FROM
-      \"${arg_table}\"
-    WHERE
-      _DeletedAt < 0
-      AND _Id = @arg_id_value
-      AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');" 1>"${data}" 2>/dev/null || true
+if [[ "${TFCLI_DISABLE_CACHE:-false}" == true ]]; then
+  : # skip managing cache entries if `TFCCLI_DISABLE_CACHE=true` was set
 else
-  sqlite3 "${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}" \
-    ".mode json" \
-    ".parameter set @TFCLI_CACHE_EXPIRY ${TFCLI_CACHE_EXPIRY:-8640000}" \
-    ".parameter set @arg_id_glob ${arg_id_glob:-}" \
-    ".timeout ${SQLITE_BUSY_TIMEOUT:-60000}" \
-    "SELECT
-      *
-    FROM
-      \"${arg_table}\"
-    WHERE
-      _DeletedAt < 0
-      AND _Id GLOB @arg_id_glob
-      AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');" 1>"${data}" 2>/dev/null || true
+  if [[ -z "${arg_id_glob:-}" ]]; then
+    sqlite3 "${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}" \
+      ".mode json" \
+      ".parameter set @TFCLI_CACHE_EXPIRY ${TFCLI_CACHE_EXPIRY:-8640000}" \
+      ".parameter set @arg_id_value ${arg_id_value:-}" \
+      ".timeout ${SQLITE_BUSY_TIMEOUT:-60000}" \
+      "SELECT
+        *
+      FROM
+        \"${arg_table}\"
+      WHERE
+        _DeletedAt < 0
+        AND _Id = @arg_id_value
+        AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');" 1>"${data}" 2>/dev/null || true
+  else
+    sqlite3 "${TFCLI_DBFILE:-${HOME}/.cache/tfcli/tfcli.sqlite}" \
+      ".mode json" \
+      ".parameter set @TFCLI_CACHE_EXPIRY ${TFCLI_CACHE_EXPIRY:-8640000}" \
+      ".parameter set @arg_id_glob ${arg_id_glob:-}" \
+      ".timeout ${SQLITE_BUSY_TIMEOUT:-60000}" \
+      "SELECT
+        *
+      FROM
+        \"${arg_table}\"
+      WHERE
+        _DeletedAt < 0
+        AND _Id GLOB @arg_id_glob
+        AND datetime('now', (SELECT -(@TFCLI_CACHE_EXPIRY)||' seconds')) < datetime(_UpdatedAt, 'unixepoch');" 1>"${data}" 2>/dev/null || true
+  fi
 fi
 
 if [[ -s "${data}" ]]; then
