@@ -5,6 +5,7 @@ set -euo pipefail
 
 [[ -z "${DEBUG:-}" ]] || set -x
 
+unset arg_max_items
 unset arg_workspace_id
 
 arg_organization_name="${TF_CLOUD_ORGANIZATION:-}"
@@ -34,6 +35,14 @@ while [[ $# -gt 0 ]]; do
   "--help" ) # option: Display help message
     tfc-helper-help "${BASH_SOURCE##*/}"
     exit 0
+    ;;
+  "--max-items" | "--max-items="* ) # option: TODO
+    if [[ "$1" == *"="* ]]; then
+      arg_max_items="${1#*=}"
+    else
+      arg_max_items="${2:-}"
+      shift 1
+    fi
     ;;
   "--organization-name" | "--organization-name="* ) # option: Organization name
     if [[ "$1" == *"="* ]]; then
@@ -87,6 +96,11 @@ if [[ -z "${arg_workspace_id:-}" ]]; then
   fi
 fi
 
+httpclient_args=()
+if [[ -n "${arg_max_items:-}" ]]; then
+  httpclient_args+=("--max-items=${arg_max_items}")
+fi
+
 # https://developer.hashicorp.com/terraform/cloud-docs/api-docs/state-versions#list-state-versions-for-a-workspace
-tfc-helper-httpclient --request-path="/state-versions" --data "filter[organization][name]=${arg_organization_name}" --data "filter[workspace][name]=${arg_workspace_name}" --get | \
+tfc-helper-httpclient "${httpclient_args[@]}" --request-path="/state-versions" --data "filter[organization][name]=${arg_organization_name}" --data "filter[workspace][name]=${arg_workspace_name}" --get | \
   tfc-helper-cache-set --partial --table="StateVersions"
